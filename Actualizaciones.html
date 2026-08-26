@@ -1,0 +1,1077 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,viewport-fit=cover"
+  >
+
+  <meta name="theme-color" content="#05080c">
+
+  <title>Actualizaciones — DashCore</title>
+
+  <meta
+    name="description"
+    content="Descubre las últimas mejoras, nuevos diseños y funciones de DashCore."
+  >
+
+  <meta name="author" content="Frito-Salami">
+  <meta name="robots" content="index, follow">
+
+    <!-- FAVICON — MISMO LOGO DE LA APP -->
+  <link
+    rel="icon"
+    href="./src/assets/logo.png"
+    type="image/png"
+  >
+
+  <link
+    rel="icon"
+    href="/public/src/assets/logo.png"
+    type="image/svg+xml"
+  >
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <!-- CSS PRINCIPAL -->
+  <link
+    rel="stylesheet"
+    href="/public/src/css/site.css"
+  >
+
+  <style>
+
+    /* ============================================================
+       DASHCORE — ACTUALIZACIONES
+       Usa el mismo sistema visual de site.css
+    ============================================================ */
+
+    .updates-page {
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .updates-page::before {
+      content: "";
+      position: fixed;
+      width: 900px;
+      height: 700px;
+      left: 50%;
+      top: 25%;
+      transform: translate(-50%, -50%);
+      background:
+        radial-gradient(
+          ellipse,
+          rgba(45, 174, 255, .075),
+          transparent 68%
+        );
+      filter: blur(30px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ============================================================
+       HERO
+    ============================================================ */
+
+    .updates-hero {
+      position: relative;
+      z-index: 2;
+      width: min(1000px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 170px 20px 70px;
+      text-align: center;
+    }
+
+    .updates-hero .section-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 22px;
+    }
+
+    .updates-hero .section-label::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 0 12px var(--blue);
+    }
+
+    .updates-hero h1 {
+      margin: 0;
+      font-family: "Orbitron", sans-serif;
+      font-size: clamp(38px, 6vw, 72px);
+      font-weight: 700;
+      line-height: 1.02;
+      letter-spacing: -.055em;
+      color: #edf7fc;
+      text-shadow: 0 15px 50px rgba(0,0,0,.5);
+    }
+
+    .updates-hero h1 strong {
+      color: var(--blue);
+      text-shadow:
+        0 0 25px rgba(45,174,255,.2),
+        0 0 60px rgba(45,174,255,.08);
+    }
+
+    .updates-hero p {
+      width: min(650px, 100%);
+      margin: 24px auto 0;
+      color: var(--muted);
+      font-family: "Inter", sans-serif;
+      font-size: 15px;
+      line-height: 1.75;
+    }
+
+    .version-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-top: 26px;
+      padding: 9px 17px;
+      border: 1px solid rgba(45,174,255,.28);
+      border-radius: 999px;
+      background: rgba(45,174,255,.055);
+      color: #7ed5ff;
+      font-family: "Orbitron", sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      box-shadow:
+        inset 0 0 20px rgba(45,174,255,.025),
+        0 0 30px rgba(45,174,255,.025);
+    }
+
+    .version-tag b {
+      display: block;
+      width: 6px;
+      height: 6px;
+      flex: 0 0 6px;
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow:
+        0 0 7px var(--blue),
+        0 0 14px rgba(45,174,255,.6);
+      animation: updatesPulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes updatesPulse {
+      0%,100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: .45;
+        transform: scale(.7);
+      }
+    }
+
+    /* ============================================================
+       CHANGELOG
+    ============================================================ */
+
+    .changelog {
+      position: relative;
+      z-index: 2;
+      width: min(900px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 20px 0 90px;
+    }
+
+    .changelog-entry {
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 24px;
+      padding: 32px;
+      border: 1px solid rgba(255,255,255,.075);
+      border-radius: 20px;
+      background:
+        linear-gradient(
+          145deg,
+          rgba(255,255,255,.035),
+          rgba(255,255,255,.012) 45%,
+          rgba(45,174,255,.018)
+        );
+      box-shadow:
+        0 25px 70px rgba(0,0,0,.28),
+        inset 0 1px 0 rgba(255,255,255,.025);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .changelog-entry::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background:
+        linear-gradient(
+          180deg,
+          transparent,
+          var(--blue),
+          transparent
+        );
+      opacity: .65;
+    }
+
+    .changelog-entry:last-child::before {
+      opacity: .25;
+    }
+
+    .changelog-entry-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 26px;
+      padding-bottom: 19px;
+      border-bottom: 1px solid rgba(255,255,255,.065);
+    }
+
+    .changelog-entry-head h2 {
+      margin: 0;
+      font-family: "Orbitron", sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #eef7fb;
+      letter-spacing: -.02em;
+    }
+
+    .changelog-date {
+      color: #637988;
+      font-family: "Inter", sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .changelog-group {
+      margin-bottom: 27px;
+    }
+
+    .changelog-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .changelog-group-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 13px;
+      font-family: "Orbitron", sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .changelog-group-title.new {
+      color: #2daeff;
+    }
+
+    .changelog-group-title.improved {
+      color: #7ee787;
+    }
+
+    .changelog-group-title.fixed {
+      color: #f2b950;
+    }
+
+    .changelog-list {
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .changelog-list li {
+      position: relative;
+      padding-left: 21px;
+      color: #9db1bf;
+      font-family: "Inter", sans-serif;
+      font-size: 13.5px;
+      line-height: 1.65;
+    }
+
+    .changelog-list li::before {
+      content: "";
+      position: absolute;
+      left: 2px;
+      top: .68em;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: .5;
+      box-shadow: 0 0 7px currentColor;
+    }
+
+    .changelog-list li strong {
+      color: #e2edf3;
+      font-weight: 700;
+    }
+
+    /* ============================================================
+       DOWNLOAD
+    ============================================================ */
+
+    .update-cta {
+      position: relative;
+      z-index: 2;
+      width: min(900px, calc(100% - 40px));
+      margin: 0 auto 110px;
+      padding: 0;
+      text-align: center;
+    }
+
+    .update-buttons {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .update-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      min-height: 56px;
+      padding: 16px 28px;
+      border-radius: 14px;
+      font-family: "Orbitron", sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-decoration: none;
+      transition:
+        transform .2s ease,
+        box-shadow .2s ease,
+        border-color .2s ease;
+    }
+
+    .update-button.primary {
+      color: #031018;
+      background:
+        linear-gradient(
+          135deg,
+          #55c4ff,
+          #2088ce
+        );
+      box-shadow:
+        0 15px 35px -12px rgba(45,174,255,.65);
+    }
+
+    .update-button.secondary {
+      color: #c8d9e4;
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.035);
+    }
+
+    .update-button:hover {
+      transform: translateY(-3px);
+    }
+
+    .update-button.primary:hover {
+      box-shadow:
+        0 20px 45px -10px rgba(45,174,255,.8);
+    }
+
+    .update-button.secondary:hover {
+      border-color: rgba(45,174,255,.28);
+      background: rgba(45,174,255,.045);
+    }
+
+    .update-button span {
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    .update-cta p {
+      margin: 17px 0 0;
+      color: #5e7382;
+      font-family: "Inter", sans-serif;
+      font-size: 11px;
+    }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+
+    @media (max-width: 700px) {
+
+      .updates-hero {
+        width: calc(100% - 28px);
+        padding: 135px 14px 55px;
+      }
+
+      .updates-hero h1 {
+        font-size: clamp(34px, 10vw, 48px);
+      }
+
+      .updates-hero p {
+        font-size: 13.5px;
+      }
+
+      .changelog {
+        width: calc(100% - 28px);
+        padding-top: 10px;
+      }
+
+      .changelog-entry {
+        padding: 25px 21px;
+        border-radius: 17px;
+      }
+
+      .changelog-entry-head h2 {
+        font-size: 19px;
+      }
+
+      .changelog-list li {
+        font-size: 13px;
+      }
+
+      .update-cta {
+        width: calc(100% - 28px);
+        margin-bottom: 80px;
+      }
+
+      .update-buttons {
+        flex-direction: column;
+      }
+
+      .update-button {
+        width: 100%;
+        min-height: 55px;
+      }
+
+    }
+
+    @media (min-width: 600px) and (max-width: 1366px) {
+
+      .updates-hero {
+        width: min(1050px, calc(100% - 64px));
+        padding-top: 145px;
+      }
+
+      .updates-hero h1 {
+        font-size: clamp(45px, 5.5vw, 68px);
+      }
+
+      .updates-hero p {
+        font-size: 16px;
+      }
+
+      .changelog {
+        width: min(1000px, calc(100% - 64px));
+      }
+
+      .changelog-entry {
+        padding: 34px;
+      }
+
+      .changelog-list li {
+        font-size: 14.5px;
+      }
+
+      .update-cta {
+        width: min(1000px, calc(100% - 64px));
+      }
+
+      .update-button {
+        min-height: 60px;
+        min-width: 260px;
+      }
+
+    }
+
+    @media (min-width: 901px) and (max-width: 1366px)
+      and (orientation: landscape) {
+
+      .updates-hero {
+        padding-top: 115px;
+        padding-bottom: 50px;
+      }
+
+      .changelog {
+        width: min(1050px, 88vw);
+      }
+
+      .update-cta {
+        width: min(1050px, 88vw);
+      }
+
+      .update-buttons {
+        flex-wrap: nowrap;
+      }
+
+      .update-button {
+        flex: 0 1 320px;
+      }
+
+    }
+
+    @media (pointer: coarse) {
+
+      .update-button {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+
+      .update-button:hover {
+        transform: none;
+      }
+
+      .update-button:active {
+        transform: scale(.98);
+      }
+
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+  <div class="grain" aria-hidden="true"></div>
+
+  <div
+    class="scroll-progress"
+    id="scroll-progress"
+    aria-hidden="true"
+  ></div>
+
+
+  <!-- =========================================================
+       HEADER
+  ========================================================= -->
+
+  <header class="topbar">
+
+    <a
+      class="brand"
+      href="index.html#inicio"
+      aria-label="DashCore inicio"
+    >
+
+      <img
+        src="/public/src/assets/logo.png"
+        class="brand-logo"
+        alt="DashCore"
+      >
+
+      <span>
+        Dash<span>Core</span>
+      </span>
+
+    </a>
+
+
+    <nav aria-label="Principal">
+
+      <a href="index.html#inicio">
+        Inicio
+      </a>
+
+      <a href="index.html#laboratorio">
+        Dashboard
+      </a>
+
+      <a href="index.html#conexion">
+        Conexión
+      </a>
+
+      <a href="index.html#descargar">
+        Descargar
+      </a>
+
+      <a
+        href="Actualizaciones.html"
+        class="active"
+      >
+        Actualizaciones
+      </a>
+
+    </nav>
+
+
+    <a
+      class="nav-download"
+      href="index.html#descargar"
+    >
+      Descargar
+      <span>↓</span>
+    </a>
+
+  </header>
+
+
+  <!-- =========================================================
+       MAIN
+  ========================================================= -->
+
+  <main class="updates-page">
+
+
+    <!-- HERO -->
+
+    <section class="updates-hero">
+
+      <span class="section-label">
+        NOVEDADES
+      </span>
+
+      <h1>
+        Lo nuevo<br>
+        en <strong>DashCore.</strong>
+      </h1>
+
+      <p>
+        Nuevas funciones, nuevos diseños y mejoras
+        para hacer de DashCore una experiencia más
+        completa al volante.
+      </p>
+
+      <div class="version-tag">
+        <b></b>
+        VERSIÓN 1.0.2 · BUILD 4
+      </div>
+
+    </section>
+
+
+    <!-- CHANGELOG -->
+
+    <section class="changelog">
+
+
+      <!-- v1.0.2 -->
+
+      <article class="changelog-entry">
+
+        <div class="changelog-entry-head">
+
+          <h2>
+            v1.0.2
+          </h2>
+
+          <span class="changelog-date">
+            Actualización más reciente
+          </span>
+
+        </div>
+
+
+        <!-- NUEVO -->
+
+        <div class="changelog-group">
+
+          <div class="changelog-group-title new">
+            ✦ Nuevo
+          </div>
+
+          <ul class="changelog-list">
+
+            <li>
+              <strong>Navegación inteligente:</strong>
+              nuevas herramientas para buscar destinos,
+              explorar lugares y disfrutar de una experiencia
+              de navegación más completa.
+            </li>
+
+            <li>
+              <strong>Estadísticas de conducción:</strong>
+              ahora puedes conocer mejor tus recorridos,
+              distancia, velocidad máxima, tiempo de conducción
+              y viajes realizados.
+            </li>
+
+            <li>
+              <strong>Rangos de conductor:</strong>
+              tu progreso de conducción ahora puede convertirse
+              en diferentes rangos y reconocimientos.
+            </li>
+
+            <li>
+              <strong>Nuevos estilos de dashboard:</strong>
+              se amplió considerablemente la colección de
+              tableros para ofrecer diferentes experiencias
+              visuales.
+            </li>
+
+            <li>
+              <strong>Personalización avanzada:</strong>
+              nuevas posibilidades para personalizar los
+              elementos y la apariencia de tu dashboard.
+            </li>
+
+            <li>
+              <strong>Centro de actualizaciones:</strong>
+              nueva pantalla para consultar fácilmente el
+              estado y las novedades de DashCore.
+            </li>
+
+          </ul>
+
+        </div>
+
+
+        <!-- MEJORADO -->
+
+        <div class="changelog-group">
+
+          <div class="changelog-group-title improved">
+            ⬆ Mejorado
+          </div>
+
+          <ul class="changelog-list">
+
+            <li>
+              <strong>Dashboard:</strong>
+              rediseño y mejoras visuales en múltiples
+              estilos de tablero.
+            </li>
+
+            <li>
+              <strong>Experiencia visual:</strong>
+              interfaces más modernas, dinámicas y
+              adaptadas a diferentes estilos de conducción.
+            </li>
+
+            <li>
+              <strong>Tienda:</strong>
+              navegación más rápida y organizada para
+              descubrir diseños y contenido.
+            </li>
+
+            <li>
+              <strong>Inicio de DashCore:</strong>
+              nueva experiencia de bienvenida con una
+              presentación más moderna y fluida.
+            </li>
+
+            <li>
+              <strong>Rendimiento:</strong>
+              nuevas opciones para mejorar la experiencia
+              en dispositivos con recursos limitados.
+            </li>
+
+            <li>
+              <strong>Modelos de vehículos:</strong>
+              mejoras en la visualización y compatibilidad
+              del contenido de vehículos.
+            </li>
+
+          </ul>
+
+        </div>
+
+
+        <!-- CORREGIDO -->
+
+        <div class="changelog-group">
+
+          <div class="changelog-group-title fixed">
+            ✓ Corregido
+          </div>
+
+          <ul class="changelog-list">
+
+            <li>
+              Mejoras generales de estabilidad y rendimiento.
+            </li>
+
+            <li>
+              Correcciones en la visualización de dashboards
+              y sus elementos.
+            </li>
+
+            <li>
+              Correcciones en la carga de contenido y
+              recursos de la aplicación.
+            </li>
+
+            <li>
+              Mejoras en la experiencia general de navegación
+              dentro de DashCore.
+            </li>
+
+          </ul>
+
+        </div>
+
+      </article>
+
+
+      <!-- v1.0.0 -->
+
+      <article class="changelog-entry">
+
+        <div class="changelog-entry-head">
+
+          <h2>
+            v1.0.0
+          </h2>
+
+          <span class="changelog-date">
+            Lanzamiento inicial
+          </span>
+
+        </div>
+
+        <div class="changelog-group">
+
+          <div class="changelog-group-title new">
+            ✦ Lanzamiento
+          </div>
+
+          <ul class="changelog-list">
+
+            <li>
+              Primer lanzamiento público de DashCore.
+            </li>
+
+            <li>
+              Dashboard digital para Android con soporte
+              para datos del vehículo mediante OBD2.
+            </li>
+
+            <li>
+              Primer conjunto de estilos y herramientas
+              de personalización.
+            </li>
+
+            <li>
+              Sitio web oficial de DashCore.
+            </li>
+
+          </ul>
+
+        </div>
+
+      </article>
+
+
+    </section>
+
+
+    <!-- =========================================================
+         DOWNLOAD CTA
+    ========================================================= -->
+
+    <section class="update-cta">
+
+      <div class="update-buttons">
+
+        <a
+          class="update-button primary"
+          href="https://github.com/FRITO-SALAMI/DashCore/releases/download/v1.0.0/DashCorex64.apk"
+          download
+        >
+          ANDROID 64-BIT
+          <span>↓</span>
+        </a>
+
+        <a
+          class="update-button secondary"
+          href="https://github.com/FRITO-SALAMI/DashCore/releases/download/v1.0.0/DashCorex32.apk"
+          download
+        >
+          ANDROID 32-BIT
+          <span>↓</span>
+        </a>
+
+      </div>
+
+      <p>
+        Descarga la versión correspondiente a tu dispositivo Android.
+      </p>
+
+    </section>
+
+
+  </main>
+
+
+  <!-- =========================================================
+       FOOTER
+  ========================================================= -->
+
+  <footer class="site-footer">
+
+    <div class="footer-glow"></div>
+
+    <div class="footer-main">
+
+
+      <div class="footer-brand-block">
+
+        <a
+          class="footer-brand"
+          href="index.html#inicio"
+        >
+
+          <img
+            src="assets/logo.png"
+            alt="DashCore"
+            class="footer-logo"
+          >
+
+          <span>
+            Dash<span>Core</span>
+          </span>
+
+        </a>
+
+        <p>
+          Tu vehículo.<br>
+          <strong>Tu tablero.</strong>
+        </p>
+
+        <div class="footer-status">
+
+          <span class="status-dot"></span>
+
+          SISTEMA ONLINE
+
+        </div>
+
+      </div>
+
+
+      <div class="footer-column">
+
+        <span class="footer-heading">
+          DASHCORE
+        </span>
+
+        <a href="index.html#inicio">
+          Inicio
+        </a>
+
+        <a href="index.html#laboratorio">
+          Dashboard
+        </a>
+
+        <a href="index.html#tableros">
+          Diseños
+        </a>
+
+        <a href="index.html#conexion">
+          Conexión
+        </a>
+
+        <a href="index.html#descargar">
+          Descargar
+        </a>
+
+        <a href="Actualizaciones.html">
+          Actualizaciones
+        </a>
+
+      </div>
+
+
+      <div class="footer-column">
+
+        <span class="footer-heading">
+          PLATAFORMA
+        </span>
+
+        <span>
+          Android
+        </span>
+
+        <span>
+          OBD2
+        </span>
+
+        <span>
+          Tiempo real
+        </span>
+
+        <span>
+          Dashboard digital
+        </span>
+
+      </div>
+
+
+      <div class="footer-download">
+
+        <span class="footer-heading">
+          EMPIEZA AHORA
+        </span>
+
+        <p>
+          Convierte tu Android en<br>
+          el tablero de tu vehículo.
+        </p>
+
+        <a
+          href="index.html#descargar"
+          class="footer-button"
+        >
+          DESCARGAR DASHCORE
+          <span>↗</span>
+        </a>
+
+      </div>
+
+
+    </div>
+
+
+    <div class="footer-bottom">
+
+      <span>
+        © 2026 DashCore
+      </span>
+
+      <span>
+        Diseñado para conducir.
+      </span>
+
+      <span>
+        By <strong>FRITO-SALAMI</strong>
+      </span>
+
+    </div>
+
+  </footer>
+
+
+  <!-- JS PRINCIPAL -->
+
+  <script src="js/site.js"></script>
+
+</body>
+
+</html>
