@@ -1,0 +1,2106 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,viewport-fit=cover"
+  >
+
+  <meta
+    name="theme-color"
+    content="#05080c"
+  >
+
+  <meta
+    name="robots"
+    content="noindex,nofollow,noarchive"
+  >
+
+  <meta
+    name="description"
+    content="Panel administrativo privado de DashCore."
+  >
+
+  <title>DashCore Admin — Control Center</title>
+
+
+  <!-- =========================================================
+       FAVICON
+  ========================================================== -->
+
+  <link
+    rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%2305080c'/%3E%3Cpath d='M14 42a19 19 0 1 1 36 0' fill='none' stroke='%232daeff' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M32 42 42 24' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='42' r='5' fill='%232daeff'/%3E%3C/svg%3E"
+  >
+
+
+  <!-- =========================================================
+       FUENTES
+  ========================================================== -->
+
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  >
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+
+  <!-- =========================================================
+       LEAFLET
+  ========================================================== -->
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  >
+
+
+  <!-- =========================================================
+       ADMIN CSS
+  ========================================================== -->
+
+  <link
+    rel="stylesheet"
+    href="admin.css"
+  >
+
+
+  <!-- =========================================================
+       ESTÉTICA EXTRA DEL PANEL
+  ========================================================== -->
+
+  <style>
+
+    :root {
+      --dc-cyan: #2daeff;
+      --dc-cyan-soft: rgba(45, 174, 255, .14);
+      --dc-bg: #05080c;
+      --dc-panel: rgba(11, 17, 24, .88);
+      --dc-border: rgba(255, 255, 255, .075);
+      --dc-text: #f4f8fc;
+      --dc-muted: #84909d;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background:
+        radial-gradient(
+          circle at 12% 8%,
+          rgba(45,174,255,.075),
+          transparent 30%
+        ),
+        radial-gradient(
+          circle at 88% 85%,
+          rgba(45,174,255,.045),
+          transparent 32%
+        ),
+        var(--dc-bg);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: .025;
+      background-image:
+        linear-gradient(
+          rgba(255,255,255,.5) 1px,
+          transparent 1px
+        ),
+        linear-gradient(
+          90deg,
+          rgba(255,255,255,.5) 1px,
+          transparent 1px
+        );
+      background-size: 32px 32px;
+    }
+
+    .login-view {
+      position: relative;
+      overflow: hidden;
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(
+          circle at 50% 15%,
+          rgba(45,174,255,.13),
+          transparent 34%
+        ),
+        #05080c;
+    }
+
+    .login-glow {
+      position: absolute;
+      width: 520px;
+      height: 520px;
+      border-radius: 50%;
+      background: rgba(45,174,255,.08);
+      filter: blur(90px);
+      pointer-events: none;
+    }
+
+    .login-card {
+      position: relative;
+      z-index: 1;
+      width: min(100%, 460px);
+      padding: 38px;
+      border: 1px solid var(--dc-border);
+      border-radius: 26px;
+      background:
+        linear-gradient(
+          145deg,
+          rgba(17,25,34,.96),
+          rgba(7,11,16,.96)
+        );
+      box-shadow:
+        0 35px 100px rgba(0,0,0,.55),
+        inset 0 1px 0 rgba(255,255,255,.035);
+      backdrop-filter: blur(24px);
+    }
+
+    .login-brand,
+    .admin-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 13px;
+      color: white;
+      font-weight: 800;
+      font-size: 20px;
+      background:
+        linear-gradient(
+          145deg,
+          #2daeff,
+          #1263a1
+        );
+      box-shadow:
+        0 0 28px rgba(45,174,255,.25);
+    }
+
+    .login-brand strong,
+    .admin-brand strong {
+      display: block;
+      font-size: 18px;
+      letter-spacing: -.04em;
+    }
+
+    .login-brand strong span,
+    .admin-brand strong span {
+      color: var(--dc-cyan);
+    }
+
+    .login-brand small,
+    .admin-brand small {
+      display: block;
+      margin-top: 2px;
+      color: var(--dc-muted);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .2em;
+    }
+
+    .login-kicker {
+      margin-top: 42px;
+      color: var(--dc-cyan);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .18em;
+    }
+
+    .login-card h1 {
+      margin: 10px 0;
+      font-size: clamp(28px, 5vw, 36px);
+      letter-spacing: -.055em;
+    }
+
+    .login-card > p {
+      color: var(--dc-muted);
+      line-height: 1.7;
+      margin-bottom: 30px;
+    }
+
+    .login-card label,
+    .modal-card label {
+      display: block;
+      margin: 17px 0 8px;
+      color: #aab5c0;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+
+    .login-card input,
+    .modal-card input,
+    .modal-card textarea,
+    .toolbar input,
+    .toolbar select {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      background: rgba(255,255,255,.035);
+      color: var(--dc-text);
+      outline: none;
+      transition:
+        border-color .2s ease,
+        box-shadow .2s ease,
+        background .2s ease;
+    }
+
+    .login-card input,
+    .modal-card input,
+    .modal-card textarea {
+      padding: 13px 14px;
+    }
+
+    .login-card input:focus,
+    .modal-card input:focus,
+    .modal-card textarea:focus,
+    .toolbar input:focus,
+    .toolbar select:focus {
+      border-color: rgba(45,174,255,.55);
+      box-shadow: 0 0 0 3px rgba(45,174,255,.08);
+      background: rgba(45,174,255,.035);
+    }
+
+    .primary-btn {
+      border: 0;
+      border-radius: 12px;
+      min-height: 46px;
+      padding: 0 18px;
+      color: #fff;
+      background:
+        linear-gradient(
+          135deg,
+          #2daeff,
+          #1475ba
+        );
+      box-shadow:
+        0 12px 30px rgba(45,174,255,.16);
+      font-weight: 800;
+      cursor: pointer;
+      transition:
+        transform .18s ease,
+        filter .18s ease,
+        box-shadow .18s ease;
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.08);
+      box-shadow:
+        0 15px 36px rgba(45,174,255,.23);
+    }
+
+    .primary-btn:active {
+      transform: translateY(0);
+    }
+
+    .login-card .primary-btn {
+      width: 100%;
+      margin-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .security-note {
+      margin-top: 22px;
+      padding: 11px 13px;
+      border: 1px solid rgba(45,174,255,.1);
+      border-radius: 11px;
+      background: rgba(45,174,255,.045);
+      color: #7f8d9a;
+      font-size: 10px;
+    }
+
+    .security-note span {
+      color: #45d68b;
+      margin-right: 6px;
+    }
+
+    .login-home-link {
+      display: block;
+      margin-top: 24px;
+      text-align: center;
+      color: #8d99a5;
+      font-size: 12px;
+      text-decoration: none;
+    }
+
+    .login-home-link:hover {
+      color: var(--dc-cyan);
+    }
+
+    .app-shell {
+      min-height: 100svh;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .sidebar {
+      background:
+        linear-gradient(
+          180deg,
+          rgba(10,16,23,.98),
+          rgba(5,8,12,.99)
+        );
+      border-right: 1px solid var(--dc-border);
+    }
+
+    .connection-pill {
+      border: 1px solid rgba(69,214,139,.12);
+      background: rgba(69,214,139,.045);
+      color: #8f9da8;
+      border-radius: 10px;
+    }
+
+    .connection-pill span,
+    .online-dot {
+      background: #45d68b;
+      box-shadow: 0 0 12px rgba(69,214,139,.55);
+    }
+
+    .nav-item {
+      transition:
+        background .18s ease,
+        color .18s ease,
+        transform .18s ease;
+    }
+
+    .nav-item:hover {
+      background: rgba(255,255,255,.035);
+      transform: translateX(2px);
+    }
+
+    .nav-item.active {
+      background:
+        linear-gradient(
+          90deg,
+          rgba(45,174,255,.13),
+          transparent
+        );
+      color: #fff;
+      box-shadow: inset 2px 0 0 var(--dc-cyan);
+    }
+
+    .topbar {
+      background: rgba(5,8,12,.78);
+      border-bottom: 1px solid var(--dc-border);
+      backdrop-filter: blur(18px);
+    }
+
+    .top-kicker,
+    .eyebrow {
+      color: var(--dc-cyan);
+      font-weight: 800;
+      letter-spacing: .15em;
+    }
+
+    .admin-chip {
+      border: 1px solid var(--dc-border);
+      background: rgba(255,255,255,.025);
+      border-radius: 999px;
+    }
+
+    .panel,
+    .stat-card,
+    .quick-action,
+    .version-card,
+    .style-card {
+      border: 1px solid var(--dc-border);
+      background:
+        linear-gradient(
+          145deg,
+          rgba(14,21,29,.9),
+          rgba(8,12,17,.88)
+        );
+      box-shadow:
+        0 18px 55px rgba(0,0,0,.15),
+        inset 0 1px 0 rgba(255,255,255,.02);
+    }
+
+    .panel {
+      border-radius: 18px;
+    }
+
+    .stat-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 17px;
+      transition:
+        transform .2s ease,
+        border-color .2s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(45,174,255,.18);
+    }
+
+    .stat-card.accent {
+      border-color: rgba(45,174,255,.2);
+      background:
+        radial-gradient(
+          circle at 90% 10%,
+          rgba(45,174,255,.12),
+          transparent 48%
+        ),
+        linear-gradient(
+          145deg,
+          rgba(14,27,39,.95),
+          rgba(8,12,17,.9)
+        );
+    }
+
+    .stat-card strong {
+      letter-spacing: -.06em;
+    }
+
+    .quick-action {
+      border-radius: 15px;
+      transition:
+        transform .2s ease,
+        border-color .2s ease,
+        background .2s ease;
+    }
+
+    .quick-action:hover {
+      transform: translateY(-2px);
+      border-color: rgba(45,174,255,.25);
+      background:
+        linear-gradient(
+          145deg,
+          rgba(45,174,255,.08),
+          rgba(8,12,17,.9)
+        );
+    }
+
+    .ghost-btn,
+    .back-btn,
+    .table-pagination button,
+    .top-site-btn,
+    .website-btn,
+    .logout-btn {
+      transition:
+        border-color .18s ease,
+        background .18s ease,
+        color .18s ease,
+        transform .18s ease;
+    }
+
+    .ghost-btn:hover,
+    .back-btn:hover,
+    .table-pagination button:hover {
+      border-color: rgba(45,174,255,.3);
+      color: var(--dc-cyan);
+      transform: translateY(-1px);
+    }
+
+    .toolbar {
+      padding: 14px;
+      border: 1px solid var(--dc-border);
+      border-radius: 16px;
+      background: rgba(10,15,21,.65);
+      box-shadow: 0 12px 40px rgba(0,0,0,.12);
+    }
+
+    .search-box {
+      border-color: rgba(255,255,255,.08) !important;
+      background: rgba(255,255,255,.025) !important;
+      border-radius: 11px !important;
+    }
+
+    .table-panel {
+      overflow: hidden;
+    }
+
+    table tbody tr {
+      transition:
+        background .15s ease;
+    }
+
+    table tbody tr:hover {
+      background: rgba(45,174,255,.035);
+    }
+
+    .style-admin-grid {
+      display: grid;
+      grid-template-columns:
+        repeat(
+          auto-fill,
+          minmax(230px, 1fr)
+        );
+      gap: 16px;
+    }
+
+    .style-card {
+      overflow: hidden;
+      border-radius: 18px;
+      transition:
+        transform .2s ease,
+        border-color .2s ease;
+    }
+
+    .style-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(45,174,255,.24);
+    }
+
+    .style-preview {
+      min-height: 150px;
+      position: relative;
+      background:
+        linear-gradient(
+          145deg,
+          rgba(45,174,255,.12),
+          rgba(5,8,12,.96)
+        ),
+        var(--style-image) center / cover no-repeat;
+    }
+
+    .style-preview::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(
+          180deg,
+          transparent 35%,
+          rgba(0,0,0,.65)
+        );
+      pointer-events: none;
+    }
+
+    .style-preview span {
+      position: absolute;
+      z-index: 1;
+      top: 12px;
+      left: 12px;
+      padding: 5px 8px;
+      border-radius: 7px;
+      background: rgba(5,8,12,.72);
+      border: 1px solid rgba(255,255,255,.08);
+      color: #b9c6d2;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: .12em;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,.72);
+      backdrop-filter: blur(8px);
+    }
+
+    .modal-card {
+      position: relative;
+      z-index: 1;
+      width: min(100%, 650px);
+      max-height: min(90svh, 800px);
+      overflow: auto;
+      padding: 30px;
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 22px;
+      background:
+        linear-gradient(
+          145deg,
+          rgba(16,24,33,.98),
+          rgba(6,10,14,.98)
+        );
+      box-shadow:
+        0 40px 100px rgba(0,0,0,.6);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--dc-border);
+      border-radius: 10px;
+      color: #9aa7b3;
+      background: rgba(255,255,255,.035);
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .modal-close:hover {
+      color: white;
+      border-color: rgba(45,174,255,.3);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px 14px;
+    }
+
+    .modal-card textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    #map {
+      min-height: 460px;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .leaflet-container {
+      background: #091018;
+      font-family: "Plus Jakarta Sans", sans-serif;
+    }
+
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip {
+      background: #0c141c;
+      color: #dce6ef;
+    }
+
+    .leaflet-popup-content {
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    #toast-root {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 20000;
+      display: grid;
+      gap: 9px;
+      width: min(360px, calc(100vw - 40px));
+      pointer-events: none;
+    }
+
+    .toast {
+      padding: 13px 15px;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      background: rgba(12,18,25,.95);
+      color: #dce6ef;
+      box-shadow: 0 15px 40px rgba(0,0,0,.35);
+      backdrop-filter: blur(14px);
+      animation: toastIn .22s ease;
+      font-size: 12px;
+    }
+
+    .toast.success {
+      border-color: rgba(69,214,139,.22);
+    }
+
+    .toast.error {
+      border-color: rgba(255,82,82,.25);
+    }
+
+    .toast.hide {
+      opacity: 0;
+      transform: translateY(8px);
+      transition: .25s ease;
+    }
+
+    @keyframes toastIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 800px) {
+
+      .login-card {
+        padding: 28px 22px;
+        border-radius: 21px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      #map {
+        min-height: 360px;
+      }
+
+    }
+
+    @media (max-width: 560px) {
+
+      .login-view {
+        padding: 14px;
+      }
+
+      .login-card {
+        padding: 24px 18px;
+      }
+
+      .modal {
+        padding: 10px;
+      }
+
+      .modal-card {
+        padding: 24px 18px;
+        border-radius: 18px;
+      }
+
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+      }
+
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================================================
+     TOAST
+========================================================= -->
+
+<div
+  id="toast-root"
+  aria-live="polite"
+  aria-atomic="true"
+></div>
+
+
+<!-- =========================================================
+     LOGIN
+========================================================= -->
+
+<section
+  id="login-view"
+  class="login-view"
+  aria-label="Acceso administrativo"
+>
+
+  <div class="login-glow"></div>
+
+  <div class="login-card">
+
+    <div class="login-brand">
+
+      <div class="brand-mark">
+        D
+      </div>
+
+      <div>
+
+        <strong>
+          Dash<span>Core</span>
+        </strong>
+
+        <small>
+          ADMIN
+        </small>
+
+      </div>
+
+    </div>
+
+
+    <div class="login-kicker">
+      PRIVATE CONTROL CENTER
+    </div>
+
+
+    <h1>
+      Acceso administrativo
+    </h1>
+
+
+    <p>
+      Gestiona usuarios, estilos, ubicaciones
+      y versiones de DashCore desde un único panel.
+    </p>
+
+
+    <form id="login-form">
+
+      <label for="login-email">
+        Correo
+      </label>
+
+      <input
+        id="login-email"
+        type="email"
+        autocomplete="username"
+        placeholder="admin@dashcore.app"
+        required
+      >
+
+
+      <label for="login-password">
+        Contraseña
+      </label>
+
+      <input
+        id="login-password"
+        type="password"
+        autocomplete="current-password"
+        placeholder="••••••••"
+        required
+      >
+
+
+      <button
+        class="primary-btn"
+        type="submit"
+      >
+
+        <span>
+          Entrar al panel
+        </span>
+
+        <span>
+          →
+        </span>
+
+      </button>
+
+
+      <div
+        id="login-status"
+        class="form-status"
+        aria-live="polite"
+      ></div>
+
+    </form>
+
+
+    <div class="security-note">
+
+      <span>
+        ●
+      </span>
+
+      Firebase Authentication · Admin claim required
+
+    </div>
+
+
+    <a
+      href="index.html"
+      class="login-home-link"
+    >
+
+      ← Volver a DashCore
+
+    </a>
+
+  </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     APPLICATION
+========================================================= -->
+
+<div
+  id="app-view"
+  class="app-shell hidden"
+>
+
+
+  <!-- =======================================================
+       SIDEBAR
+  ======================================================== -->
+
+  <aside
+    class="sidebar"
+    id="sidebar"
+  >
+
+    <div class="sidebar-top">
+
+      <a
+        class="admin-brand"
+        href="#overview"
+        aria-label="DashCore Admin"
+      >
+
+        <div class="brand-mark">
+          D
+        </div>
+
+        <div>
+
+          <strong>
+            Dash<span>Core</span>
+          </strong>
+
+          <small>
+            ADMIN
+          </small>
+
+        </div>
+
+      </a>
+
+
+      <button
+        class="mobile-close"
+        id="mobile-close"
+        type="button"
+        aria-label="Cerrar menú"
+      >
+        ×
+      </button>
+
+    </div>
+
+
+    <nav
+      class="main-nav"
+      aria-label="Administración"
+    >
+
+      <button
+        class="nav-item active"
+        data-view="overview"
+        type="button"
+      >
+
+        <span>
+          ⌂
+        </span>
+
+        Resumen
+
+      </button>
+
+
+      <button
+        class="nav-item"
+        data-view="users"
+        type="button"
+      >
+
+        <span>
+          ◎
+        </span>
+
+        Usuarios
+
+      </button>
+
+
+      <button
+        class="nav-item"
+        data-view="styles"
+        type="button"
+      >
+
+        <span>
+          ◈
+        </span>
+
+        Estilos
+
+      </button>
+
+
+      <button
+        class="nav-item"
+        data-view="locations"
+        type="button"
+      >
+
+        <span>
+          ⌖
+        </span>
+
+        Ubicaciones
+
+      </button>
+
+
+      <button
+        class="nav-item"
+        data-view="versions"
+        type="button"
+      >
+
+        <span>
+          ↟
+        </span>
+
+        Versiones
+
+      </button>
+
+    </nav>
+
+
+    <div class="sidebar-bottom">
+
+      <div class="connection-pill">
+
+        <span></span>
+
+        Firebase conectado
+
+      </div>
+
+
+      <a
+        href="index.html"
+        class="website-btn"
+      >
+
+        <span>
+          ↗
+        </span>
+
+        Ver sitio web
+
+      </a>
+
+
+      <button
+        class="logout-btn"
+        id="logout-btn"
+        type="button"
+      >
+
+        Cerrar sesión
+
+        <span>
+          ↗
+        </span>
+
+      </button>
+
+    </div>
+
+  </aside>
+
+
+  <div
+    class="mobile-overlay"
+    id="mobile-overlay"
+  ></div>
+
+
+  <!-- =======================================================
+       MAIN
+  ======================================================== -->
+
+  <main class="main">
+
+
+    <header class="topbar">
+
+      <button
+        class="mobile-menu"
+        id="mobile-menu"
+        type="button"
+        aria-label="Abrir menú"
+      >
+        ☰
+      </button>
+
+
+      <div class="topbar-title">
+
+        <div
+          class="top-kicker"
+          id="view-kicker"
+        >
+          CONTROL CENTER
+        </div>
+
+
+        <h2 id="view-title">
+          Resumen
+        </h2>
+
+      </div>
+
+
+      <div class="top-actions">
+
+        <a
+          href="index.html"
+          class="top-site-btn"
+          title="Abrir sitio web"
+        >
+          ↗
+        </a>
+
+
+        <div class="admin-chip">
+
+          <span class="online-dot"></span>
+
+          <span id="admin-email">
+            Admin
+          </span>
+
+        </div>
+
+      </div>
+
+    </header>
+
+
+
+    <!-- =====================================================
+         CONTENT
+    ====================================================== -->
+
+    <section class="content">
+
+
+      <!-- ===================================================
+           OVERVIEW
+      ==================================================== -->
+
+      <div
+        class="view active"
+        id="view-overview"
+      >
+
+        <div class="welcome-row">
+
+          <div>
+
+            <p class="eyebrow">
+              DASHCORE / LIVE DATA
+            </p>
+
+            <h1>
+              Visión general
+            </h1>
+
+            <p class="muted">
+              Actividad y distribución de la comunidad DashCore.
+            </p>
+
+          </div>
+
+
+          <button
+            class="ghost-btn"
+            id="refresh-overview"
+            type="button"
+          >
+            ↻ Actualizar
+          </button>
+
+        </div>
+
+
+        <div class="stats-grid">
+
+          <article class="stat-card accent">
+
+            <span>
+              USUARIOS
+            </span>
+
+            <strong id="stat-users">
+              —
+            </strong>
+
+            <small>
+              Total registrados
+            </small>
+
+          </article>
+
+
+          <article class="stat-card">
+
+            <span>
+              ACTIVOS
+            </span>
+
+            <strong id="stat-active">
+              —
+            </strong>
+
+            <small>
+              Actividad reciente
+            </small>
+
+          </article>
+
+
+          <article class="stat-card">
+
+            <span>
+              REGISTROS
+            </span>
+
+            <strong id="stat-registrations">
+              —
+            </strong>
+
+            <small>
+              Últimos 30 días
+            </small>
+
+          </article>
+
+
+          <article class="stat-card">
+
+            <span>
+              VERSIONES
+            </span>
+
+            <strong id="stat-versions">
+              —
+            </strong>
+
+            <small>
+              Publicadas
+            </small>
+
+          </article>
+
+        </div>
+
+
+        <div class="quick-actions">
+
+          <div class="quick-action-title">
+
+            <p class="eyebrow">
+              ACCIONES RÁPIDAS
+            </p>
+
+            <span>
+              CONTROL CENTER
+            </span>
+
+          </div>
+
+
+          <button
+            class="quick-action"
+            data-view="users"
+            type="button"
+          >
+
+            <span>
+              ◎
+            </span>
+
+            <div>
+
+              <strong>
+                Ver usuarios
+              </strong>
+
+              <small>
+                Consultar actividad
+              </small>
+
+            </div>
+
+          </button>
+
+
+          <button
+            class="quick-action"
+            data-view="styles"
+            type="button"
+          >
+
+            <span>
+              ◈
+            </span>
+
+            <div>
+
+              <strong>
+                Ver estilos
+              </strong>
+
+              <small>
+                Analizar preferencias
+              </small>
+
+            </div>
+
+          </button>
+
+
+          <button
+            class="quick-action"
+            data-view="versions"
+            type="button"
+          >
+
+            <span>
+              ↟
+            </span>
+
+            <div>
+
+              <strong>
+                Gestionar versiones
+              </strong>
+
+              <small>
+                Controlar releases
+              </small>
+
+            </div>
+
+          </button>
+
+        </div>
+
+
+        <div class="dashboard-grid">
+
+          <article class="panel">
+
+            <div class="panel-head">
+
+              <p class="eyebrow">
+                DISTRIBUCIÓN
+              </p>
+
+              <h3>
+                Versiones instaladas
+              </h3>
+
+            </div>
+
+
+            <div
+              id="version-chart"
+              class="bar-chart"
+            ></div>
+
+          </article>
+
+
+          <article class="panel">
+
+            <div class="panel-head">
+
+              <p class="eyebrow">
+                PREFERENCIAS
+              </p>
+
+              <h3>
+                Estilos utilizados
+              </h3>
+
+            </div>
+
+
+            <div
+              id="style-chart"
+              class="rank-list"
+            ></div>
+
+          </article>
+
+        </div>
+
+
+        <div class="dashboard-grid lower">
+
+          <article class="panel">
+
+            <div class="panel-head">
+
+              <p class="eyebrow">
+                GEO
+              </p>
+
+              <h3>
+                Países
+              </h3>
+
+            </div>
+
+
+            <div
+              id="country-list"
+              class="rank-list"
+            ></div>
+
+          </article>
+
+
+          <article class="panel">
+
+            <div class="panel-head">
+
+              <p class="eyebrow">
+                GEO
+              </p>
+
+              <h3>
+                Ciudades
+              </h3>
+
+            </div>
+
+
+            <div
+              id="city-list"
+              class="rank-list"
+            ></div>
+
+          </article>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- ===================================================
+           USERS
+      ==================================================== -->
+
+      <div
+        class="view"
+        id="view-users"
+      >
+
+        <div class="welcome-row">
+
+          <div>
+
+            <p class="eyebrow">
+              COMMUNITY
+            </p>
+
+            <h1>
+              Usuarios
+            </h1>
+
+            <p class="muted">
+              Consulta perfiles, actividad y configuración.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="toolbar">
+
+          <div class="search-box">
+
+            <span>
+              ⌕
+            </span>
+
+            <input
+              id="user-search"
+              type="search"
+              placeholder="Buscar por email o UID"
+              autocomplete="off"
+            >
+
+          </div>
+
+
+          <select id="country-filter">
+
+            <option value="">
+              Todos los países
+            </option>
+
+          </select>
+
+
+          <select id="version-filter">
+
+            <option value="">
+              Todas las versiones
+            </option>
+
+          </select>
+
+
+          <button
+            class="ghost-btn"
+            id="clear-user-filters"
+            type="button"
+          >
+            Limpiar
+          </button>
+
+        </div>
+
+
+        <div class="panel table-panel">
+
+          <div class="table-wrap">
+
+            <table>
+
+              <thead>
+
+                <tr>
+
+                  <th>
+                    USUARIO
+                  </th>
+
+                  <th>
+                    REGISTRO
+                  </th>
+
+                  <th>
+                    ÚLTIMO ACCESO
+                  </th>
+
+                  <th>
+                    UBICACIÓN
+                  </th>
+
+                  <th>
+                    DISPOSITIVO
+                  </th>
+
+                  <th>
+                    VERSIÓN
+                  </th>
+
+                  <th>
+                    ESTILO
+                  </th>
+
+                  <th>
+                    SINCRONIZACIÓN
+                  </th>
+
+                </tr>
+
+              </thead>
+
+
+              <tbody id="users-table"></tbody>
+
+            </table>
+
+          </div>
+
+
+          <div class="table-pagination">
+
+            <button
+              id="users-prev"
+              type="button"
+            >
+              ← Anterior
+            </button>
+
+
+            <span id="users-page">
+              1
+            </span>
+
+
+            <button
+              id="users-next"
+              type="button"
+            >
+              Siguiente →
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- ===================================================
+           USER DETAIL
+      ==================================================== -->
+
+      <div
+        class="view"
+        id="view-user-detail"
+      >
+
+        <button
+          class="back-btn"
+          data-view="users"
+          type="button"
+        >
+          ← Usuarios
+        </button>
+
+
+        <div id="user-detail-root"></div>
+
+      </div>
+
+
+
+      <!-- ===================================================
+           STYLES
+      ==================================================== -->
+
+      <div
+        class="view"
+        id="view-styles"
+      >
+
+        <div class="welcome-row">
+
+          <div>
+
+            <p class="eyebrow">
+              DESIGN SYSTEM
+            </p>
+
+            <h1>
+              Estilos
+            </h1>
+
+            <p class="muted">
+              Uso de dashboards y usuarios por diseño.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div
+          id="styles-grid"
+          class="style-admin-grid"
+        ></div>
+
+      </div>
+
+
+
+      <!-- ===================================================
+           LOCATIONS
+      ==================================================== -->
+
+      <div
+        class="view"
+        id="view-locations"
+      >
+
+        <div class="welcome-row">
+
+          <div>
+
+            <p class="eyebrow">
+              GEO INTELLIGENCE
+            </p>
+
+            <h1>
+              Ubicaciones
+            </h1>
+
+            <p class="muted">
+              Solo se muestran coordenadas si el usuario
+              autorizó compartirlas.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="location-grid">
+
+          <article class="panel map-panel">
+
+            <div class="panel-head">
+
+              <p class="eyebrow">
+                MAPA
+              </p>
+
+              <h3>
+                Usuarios con ubicación autorizada
+              </h3>
+
+            </div>
+
+
+            <div
+              id="map"
+              aria-label="Mapa de usuarios"
+            ></div>
+
+          </article>
+
+
+          <div class="location-side">
+
+            <article class="panel">
+
+              <div class="panel-head">
+
+                <p class="eyebrow">
+                  PAÍSES
+                </p>
+
+                <h3>
+                  Distribución
+                </h3>
+
+              </div>
+
+
+              <div
+                id="location-countries"
+                class="rank-list"
+              ></div>
+
+            </article>
+
+
+            <article class="panel">
+
+              <div class="panel-head">
+
+                <p class="eyebrow">
+                  CIUDADES
+                </p>
+
+                <h3>
+                  Principales ciudades
+                </h3>
+
+              </div>
+
+
+              <div
+                id="location-cities"
+                class="rank-list"
+              ></div>
+
+            </article>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- ===================================================
+           VERSIONS
+      ==================================================== -->
+
+      <div
+        class="view"
+        id="view-versions"
+      >
+
+        <div class="welcome-row">
+
+          <div>
+
+            <p class="eyebrow">
+              RELEASE CONTROL
+            </p>
+
+            <h1>
+              Versiones
+            </h1>
+
+            <p class="muted">
+              Reglas de actualización que DashCore puede
+              consultar desde Firebase.
+            </p>
+
+          </div>
+
+
+          <button
+            class="primary-btn compact"
+            id="new-version"
+            type="button"
+          >
+            + Nueva versión
+          </button>
+
+        </div>
+
+
+        <div
+          id="versions-list"
+          class="versions-list"
+        ></div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+</div>
+
+
+
+<!-- =========================================================
+     VERSION MODAL
+========================================================= -->
+
+<div
+  class="modal hidden"
+  id="version-modal"
+>
+
+  <div
+    class="modal-backdrop"
+    data-close-version
+  ></div>
+
+
+  <div
+    class="modal-card"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="version-modal-title"
+  >
+
+    <button
+      class="modal-close"
+      data-close-version
+      type="button"
+      aria-label="Cerrar"
+    >
+      ×
+    </button>
+
+
+    <p class="eyebrow">
+      RELEASE CONTROL
+    </p>
+
+
+    <h2 id="version-modal-title">
+      Nueva versión
+    </h2>
+
+
+    <form id="version-form">
+
+      <div class="form-grid">
+
+        <div>
+
+          <label for="v-name">
+            versionName
+          </label>
+
+          <input
+            id="v-name"
+            required
+            placeholder="1.0.3"
+          >
+
+        </div>
+
+
+        <div>
+
+          <label for="v-code">
+            versionCode
+          </label>
+
+          <input
+            id="v-code"
+            type="number"
+            required
+            placeholder="5"
+          >
+
+        </div>
+
+
+        <div>
+
+          <label for="v-min">
+            minimumVersionCode
+          </label>
+
+          <input
+            id="v-min"
+            type="number"
+            required
+            placeholder="4"
+          >
+
+        </div>
+
+
+        <div>
+
+          <label for="v-url">
+            URL de descarga
+          </label>
+
+          <input
+            id="v-url"
+            type="url"
+            required
+            placeholder="https://..."
+          >
+
+        </div>
+
+      </div>
+
+
+      <label for="v-changelog">
+        Changelog
+      </label>
+
+
+      <textarea
+        id="v-changelog"
+        rows="5"
+        placeholder="Mejoras, correcciones y novedades..."
+      ></textarea>
+
+
+      <label class="toggle-row">
+
+        <input
+          id="v-required"
+          type="checkbox"
+        >
+
+        <span class="toggle"></span>
+
+        Actualización obligatoria
+
+      </label>
+
+
+      <label class="toggle-row">
+
+        <input
+          id="v-active"
+          type="checkbox"
+          checked
+        >
+
+        <span class="toggle"></span>
+
+        Versión activa
+
+      </label>
+
+
+      <div
+        class="form-status"
+        id="version-status"
+      ></div>
+
+
+      <button
+        class="primary-btn"
+        type="submit"
+      >
+        Guardar versión
+      </button>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     LEAFLET
+========================================================= -->
+
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  crossorigin=""
+></script>
+
+
+<!-- =========================================================
+     ADMIN JAVASCRIPT
+========================================================= -->
+
+<script
+  type="module"
+  src="admin.js"
+></script>
+
+
+</body>
+</html>
