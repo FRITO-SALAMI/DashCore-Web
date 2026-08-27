@@ -4335,3 +4335,4 @@ window.addEventListener(
 
   }
 );
+window.adminSupabase = supabase;
