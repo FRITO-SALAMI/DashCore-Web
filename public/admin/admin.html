@@ -135,6 +135,11 @@
       background-size: 32px 32px;
     }
 
+
+    /* =========================================================
+       LOGIN
+    ========================================================== */
+
     .login-view {
       position: relative;
       overflow: hidden;
@@ -142,6 +147,7 @@
       display: grid;
       place-items: center;
       padding: 24px;
+
       background:
         radial-gradient(
           circle at 50% 15%,
@@ -164,62 +170,81 @@
     .login-card {
       position: relative;
       z-index: 1;
+
       width: min(100%, 460px);
+
       padding: 38px;
+
       border: 1px solid var(--dc-border);
       border-radius: 26px;
+
       background:
         linear-gradient(
           145deg,
           rgba(17,25,34,.96),
           rgba(7,11,16,.96)
         );
+
       box-shadow:
         0 35px 100px rgba(0,0,0,.55),
         inset 0 1px 0 rgba(255,255,255,.035);
+
       backdrop-filter: blur(24px);
     }
 
-    .login-brand,
-    .admin-brand {
+
+    /* LOGO */
+
+    .login-brand {
       display: flex;
+      flex-direction: column;
       align-items: center;
+      justify-content: center;
+      text-align: center;
       gap: 12px;
     }
 
     .brand-mark {
-      width: 42px;
-      height: 42px;
+      width: 68px;
+      height: 68px;
+
       display: grid;
       place-items: center;
-      border-radius: 13px;
-      color: white;
-      font-weight: 800;
-      font-size: 20px;
+
+      overflow: hidden;
+
+      border-radius: 18px;
+
       background:
         linear-gradient(
           145deg,
           #2daeff,
           #1263a1
         );
+
       box-shadow:
-        0 0 28px rgba(45,174,255,.25);
+        0 0 35px rgba(45,174,255,.28);
     }
 
-    .login-brand strong,
-    .admin-brand strong {
+    .brand-mark img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
       display: block;
-      font-size: 18px;
+      border-radius: inherit;
+    }
+
+    .login-brand strong {
+      display: block;
+      font-size: 22px;
       letter-spacing: -.04em;
     }
 
-    .login-brand strong span,
-    .admin-brand strong span {
+    .login-brand strong span {
       color: var(--dc-cyan);
     }
 
-    .login-brand small,
-    .admin-brand small {
+    .login-brand small {
       display: block;
       margin-top: 2px;
       color: var(--dc-muted);
@@ -228,31 +253,35 @@
       letter-spacing: .2em;
     }
 
+
     .login-kicker {
-      margin-top: 42px;
-      color: var(--dc-cyan);
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: .18em;
+      display: none;
     }
 
     .login-card h1 {
-      margin: 10px 0;
-      font-size: clamp(28px, 5vw, 36px);
+      margin: 38px 0 28px;
+
+      text-align: center;
+
+      font-size: clamp(32px, 5vw, 40px);
       letter-spacing: -.055em;
     }
 
     .login-card > p {
-      color: var(--dc-muted);
-      line-height: 1.7;
-      margin-bottom: 30px;
+      display: none;
     }
+
+
+    /* CAMPOS */
 
     .login-card label,
     .modal-card label {
       display: block;
+
       margin: 17px 0 8px;
+
       color: #aab5c0;
+
       font-size: 11px;
       font-weight: 700;
       letter-spacing: .04em;
@@ -265,11 +294,15 @@
     .toolbar select {
       width: 100%;
       box-sizing: border-box;
+
       border: 1px solid rgba(255,255,255,.08);
       border-radius: 12px;
+
       background: rgba(255,255,255,.035);
       color: var(--dc-text);
+
       outline: none;
+
       transition:
         border-color .2s ease,
         box-shadow .2s ease,
@@ -282,32 +315,48 @@
       padding: 13px 14px;
     }
 
+    .login-card input {
+      min-height: 50px;
+    }
+
     .login-card input:focus,
     .modal-card input:focus,
     .modal-card textarea:focus,
     .toolbar input:focus,
     .toolbar select:focus {
       border-color: rgba(45,174,255,.55);
-      box-shadow: 0 0 0 3px rgba(45,174,255,.08);
+
+      box-shadow:
+        0 0 0 3px rgba(45,174,255,.08);
+
       background: rgba(45,174,255,.035);
     }
+
+
+    /* BOTÓN */
 
     .primary-btn {
       border: 0;
       border-radius: 12px;
+
       min-height: 46px;
       padding: 0 18px;
+
       color: #fff;
+
       background:
         linear-gradient(
           135deg,
           #2daeff,
           #1475ba
         );
+
       box-shadow:
         0 12px 30px rgba(45,174,255,.16);
+
       font-weight: 800;
       cursor: pointer;
+
       transition:
         transform .18s ease,
         filter .18s ease,
@@ -316,7 +365,9 @@
 
     .primary-btn:hover {
       transform: translateY(-1px);
+
       filter: brightness(1.08);
+
       box-shadow:
         0 15px 36px rgba(45,174,255,.23);
     }
@@ -327,39 +378,26 @@
 
     .login-card .primary-btn {
       width: 100%;
+
       margin-top: 24px;
+
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
     }
 
-    .security-note {
-      margin-top: 22px;
-      padding: 11px 13px;
-      border: 1px solid rgba(45,174,255,.1);
-      border-radius: 11px;
-      background: rgba(45,174,255,.045);
-      color: #7f8d9a;
-      font-size: 10px;
-    }
 
-    .security-note span {
-      color: #45d68b;
-      margin-right: 6px;
-    }
+    /* OCULTAR ELEMENTOS EXTRA DEL LOGIN */
 
+    .security-note,
     .login-home-link {
-      display: block;
-      margin-top: 24px;
-      text-align: center;
-      color: #8d99a5;
-      font-size: 12px;
-      text-decoration: none;
+      display: none;
     }
 
-    .login-home-link:hover {
-      color: var(--dc-cyan);
-    }
+
+    /* =========================================================
+       APPLICATION
+    ========================================================== */
 
     .app-shell {
       min-height: 100svh;
@@ -376,6 +414,7 @@
           rgba(10,16,23,.98),
           rgba(5,8,12,.99)
         );
+
       border-right: 1px solid var(--dc-border);
     }
 
@@ -411,26 +450,34 @@
           rgba(45,174,255,.13),
           transparent
         );
+
       color: #fff;
-      box-shadow: inset 2px 0 0 var(--dc-cyan);
+
+      box-shadow:
+        inset 2px 0 0 var(--dc-cyan);
     }
 
     .topbar {
       background: rgba(5,8,12,.78);
+
       border-bottom: 1px solid var(--dc-border);
+
       backdrop-filter: blur(18px);
     }
 
     .top-kicker,
     .eyebrow {
       color: var(--dc-cyan);
+
       font-weight: 800;
       letter-spacing: .15em;
     }
 
     .admin-chip {
       border: 1px solid var(--dc-border);
+
       background: rgba(255,255,255,.025);
+
       border-radius: 999px;
     }
 
@@ -440,12 +487,14 @@
     .version-card,
     .style-card {
       border: 1px solid var(--dc-border);
+
       background:
         linear-gradient(
           145deg,
           rgba(14,21,29,.9),
           rgba(8,12,17,.88)
         );
+
       box-shadow:
         0 18px 55px rgba(0,0,0,.15),
         inset 0 1px 0 rgba(255,255,255,.02);
@@ -458,7 +507,9 @@
     .stat-card {
       position: relative;
       overflow: hidden;
+
       border-radius: 17px;
+
       transition:
         transform .2s ease,
         border-color .2s ease;
@@ -466,11 +517,13 @@
 
     .stat-card:hover {
       transform: translateY(-2px);
+
       border-color: rgba(45,174,255,.18);
     }
 
     .stat-card.accent {
       border-color: rgba(45,174,255,.2);
+
       background:
         radial-gradient(
           circle at 90% 10%,
@@ -490,6 +543,7 @@
 
     .quick-action {
       border-radius: 15px;
+
       transition:
         transform .2s ease,
         border-color .2s ease,
@@ -498,7 +552,9 @@
 
     .quick-action:hover {
       transform: translateY(-2px);
+
       border-color: rgba(45,174,255,.25);
+
       background:
         linear-gradient(
           145deg,
@@ -524,16 +580,22 @@
     .back-btn:hover,
     .table-pagination button:hover {
       border-color: rgba(45,174,255,.3);
+
       color: var(--dc-cyan);
+
       transform: translateY(-1px);
     }
 
     .toolbar {
       padding: 14px;
+
       border: 1px solid var(--dc-border);
       border-radius: 16px;
+
       background: rgba(10,15,21,.65);
-      box-shadow: 0 12px 40px rgba(0,0,0,.12);
+
+      box-shadow:
+        0 12px 40px rgba(0,0,0,.12);
     }
 
     .search-box {
@@ -557,17 +619,21 @@
 
     .style-admin-grid {
       display: grid;
+
       grid-template-columns:
         repeat(
           auto-fill,
           minmax(230px, 1fr)
         );
+
       gap: 16px;
     }
 
     .style-card {
       overflow: hidden;
+
       border-radius: 18px;
+
       transition:
         transform .2s ease,
         border-color .2s ease;
@@ -575,12 +641,15 @@
 
     .style-card:hover {
       transform: translateY(-3px);
+
       border-color: rgba(45,174,255,.24);
     }
 
     .style-preview {
       min-height: 150px;
+
       position: relative;
+
       background:
         linear-gradient(
           145deg,
@@ -592,139 +661,222 @@
 
     .style-preview::after {
       content: "";
+
       position: absolute;
       inset: 0;
+
       background:
         linear-gradient(
           180deg,
           transparent 35%,
           rgba(0,0,0,.65)
         );
+
       pointer-events: none;
     }
 
     .style-preview span {
       position: absolute;
+
       z-index: 1;
+
       top: 12px;
       left: 12px;
+
       padding: 5px 8px;
+
       border-radius: 7px;
+
       background: rgba(5,8,12,.72);
+
       border: 1px solid rgba(255,255,255,.08);
+
       color: #b9c6d2;
+
       font-size: 8px;
+
       font-weight: 800;
+
       letter-spacing: .12em;
     }
 
+
+    /* =========================================================
+       MODALS
+    ========================================================== */
+
     .modal {
       position: fixed;
+
       inset: 0;
+
       z-index: 10000;
+
       display: grid;
+
       place-items: center;
+
       padding: 20px;
     }
 
     .modal-backdrop {
       position: absolute;
+
       inset: 0;
+
       background: rgba(0,0,0,.72);
+
       backdrop-filter: blur(8px);
     }
 
     .modal-card {
       position: relative;
+
       z-index: 1;
+
       width: min(100%, 650px);
+
       max-height: min(90svh, 800px);
+
       overflow: auto;
+
       padding: 30px;
+
       border: 1px solid rgba(255,255,255,.09);
+
       border-radius: 22px;
+
       background:
         linear-gradient(
           145deg,
           rgba(16,24,33,.98),
           rgba(6,10,14,.98)
         );
+
       box-shadow:
         0 40px 100px rgba(0,0,0,.6);
     }
 
     .modal-close {
       position: absolute;
+
       top: 16px;
       right: 16px;
+
       width: 34px;
       height: 34px;
+
       border: 1px solid var(--dc-border);
+
       border-radius: 10px;
+
       color: #9aa7b3;
+
       background: rgba(255,255,255,.035);
+
       cursor: pointer;
+
       font-size: 20px;
     }
 
     .modal-close:hover {
       color: white;
+
       border-color: rgba(45,174,255,.3);
     }
 
     .form-grid {
       display: grid;
+
       grid-template-columns: repeat(2, 1fr);
+
       gap: 4px 14px;
     }
 
     .modal-card textarea {
       resize: vertical;
+
       min-height: 120px;
     }
 
+
+    /* =========================================================
+       MAP
+    ========================================================== */
+
     #map {
       min-height: 460px;
+
       border-radius: 14px;
+
       overflow: hidden;
     }
 
     .leaflet-container {
       background: #091018;
-      font-family: "Plus Jakarta Sans", sans-serif;
+
+      font-family:
+        "Plus Jakarta Sans",
+        sans-serif;
     }
 
     .leaflet-popup-content-wrapper,
     .leaflet-popup-tip {
       background: #0c141c;
+
       color: #dce6ef;
     }
 
     .leaflet-popup-content {
       font-size: 12px;
+
       line-height: 1.6;
     }
 
+
+    /* =========================================================
+       TOAST
+    ========================================================== */
+
     #toast-root {
       position: fixed;
+
       right: 20px;
       bottom: 20px;
+
       z-index: 20000;
+
       display: grid;
+
       gap: 9px;
-      width: min(360px, calc(100vw - 40px));
+
+      width: min(
+        360px,
+        calc(100vw - 40px)
+      );
+
       pointer-events: none;
     }
 
     .toast {
       padding: 13px 15px;
+
       border: 1px solid rgba(255,255,255,.08);
+
       border-radius: 12px;
+
       background: rgba(12,18,25,.95);
+
       color: #dce6ef;
-      box-shadow: 0 15px 40px rgba(0,0,0,.35);
+
+      box-shadow:
+        0 15px 40px rgba(0,0,0,.35);
+
       backdrop-filter: blur(14px);
-      animation: toastIn .22s ease;
+
+      animation:
+        toastIn .22s ease;
+
       font-size: 12px;
     }
 
@@ -738,11 +890,14 @@
 
     .toast.hide {
       opacity: 0;
+
       transform: translateY(8px);
+
       transition: .25s ease;
     }
 
     @keyframes toastIn {
+
       from {
         opacity: 0;
         transform: translateY(8px);
@@ -752,12 +907,19 @@
         opacity: 1;
         transform: translateY(0);
       }
+
     }
+
+
+    /* =========================================================
+       RESPONSIVE
+    ========================================================== */
 
     @media (max-width: 800px) {
 
       .login-card {
         padding: 28px 22px;
+
         border-radius: 21px;
       }
 
@@ -771,6 +933,7 @@
 
     }
 
+
     @media (max-width: 560px) {
 
       .login-view {
@@ -778,7 +941,11 @@
       }
 
       .login-card {
-        padding: 24px 18px;
+        padding: 28px 18px;
+      }
+
+      .login-card h1 {
+        margin-top: 32px;
       }
 
       .modal {
@@ -787,10 +954,12 @@
 
       .modal-card {
         padding: 24px 18px;
+
         border-radius: 18px;
       }
 
     }
+
 
     @media (prefers-reduced-motion: reduce) {
 
@@ -798,7 +967,9 @@
       *::before,
       *::after {
         scroll-behavior: auto !important;
+
         animation-duration: .01ms !important;
+
         transition-duration: .01ms !important;
       }
 
@@ -835,13 +1006,23 @@
 
   <div class="login-glow"></div>
 
+
   <div class="login-card">
+
+
+    <!-- LOGO DE LA APP -->
 
     <div class="login-brand">
 
       <div class="brand-mark">
-        D
+
+        <img
+          src="LOGO.png"
+          alt="DashCore"
+        >
+
       </div>
+
 
       <div>
 
@@ -858,40 +1039,34 @@
     </div>
 
 
-    <div class="login-kicker">
-      PRIVATE CONTROL CENTER
-    </div>
-
+    <!-- SOLO ACCESO -->
 
     <h1>
-      Acceso administrativo
+      Acceso
     </h1>
-
-
-    <p>
-      Gestiona usuarios, estilos, ubicaciones
-      y versiones de DashCore desde un único panel.
-    </p>
 
 
     <form id="login-form">
 
+
       <label for="login-email">
-        Correo
+        Usuario / Correo
       </label>
+
 
       <input
         id="login-email"
         type="email"
         autocomplete="username"
-        placeholder="admin@dashcore.app"
+        placeholder="Usuario o correo"
         required
       >
 
 
       <label for="login-password">
-        Contraseña
+        Clave
       </label>
+
 
       <input
         id="login-password"
@@ -908,11 +1083,7 @@
       >
 
         <span>
-          Entrar al panel
-        </span>
-
-        <span>
-          →
+          Entrar
         </span>
 
       </button>
@@ -924,28 +1095,9 @@
         aria-live="polite"
       ></div>
 
+
     </form>
 
-
-    <div class="security-note">
-
-      <span>
-        ●
-      </span>
-
-      Supabase Auth · Acceso restringido a administradores
-
-    </div>
-
-
-    <a
-      href="../index.html"
-      class="login-home-link"
-    >
-
-      ← Volver a DashCore
-
-    </a>
 
   </div>
 
@@ -974,6 +1126,7 @@
 
     <div class="sidebar-top">
 
+
       <a
         class="admin-brand"
         href="#overview"
@@ -981,8 +1134,14 @@
       >
 
         <div class="brand-mark">
-          D
+
+          <img
+            src="LOGO.png"
+            alt="DashCore"
+          >
+
         </div>
+
 
         <div>
 
@@ -1015,6 +1174,7 @@
       class="main-nav"
       aria-label="Administración"
     >
+
 
       <button
         class="nav-item active"
@@ -1105,10 +1265,12 @@
 
       </button>
 
+
     </nav>
 
 
     <div class="sidebar-bottom">
+
 
       <div class="connection-pill">
 
@@ -1147,6 +1309,7 @@
 
       </button>
 
+
     </div>
 
   </aside>
@@ -1167,6 +1330,7 @@
 
     <header class="topbar">
 
+
       <button
         class="mobile-menu"
         id="mobile-menu"
@@ -1178,6 +1342,7 @@
 
 
       <div class="topbar-title">
+
 
         <div
           class="top-kicker"
@@ -1191,10 +1356,12 @@
           Resumen
         </h2>
 
+
       </div>
 
 
       <div class="top-actions">
+
 
         <a
           href="../index.html"
@@ -1215,7 +1382,9 @@
 
         </div>
 
+
       </div>
+
 
     </header>
 
@@ -1237,7 +1406,9 @@
         id="view-overview"
       >
 
+
         <div class="welcome-row">
+
 
           <div>
 
@@ -1264,10 +1435,12 @@
             ↻ Actualizar
           </button>
 
+
         </div>
 
 
         <div class="stats-grid">
+
 
           <article class="stat-card accent">
 
@@ -1336,10 +1509,12 @@
 
           </article>
 
+
         </div>
 
 
         <div class="quick-actions">
+
 
           <div class="quick-action-title">
 
@@ -1453,10 +1628,12 @@
 
           </button>
 
+
         </div>
 
 
         <div class="dashboard-grid">
+
 
           <article class="panel">
 
@@ -1477,6 +1654,7 @@
               id="version-chart"
               class="bar-chart"
             ></div>
+
 
           </article>
 
@@ -1501,12 +1679,15 @@
               class="rank-list"
             ></div>
 
+
           </article>
+
 
         </div>
 
 
         <div class="dashboard-grid lower">
+
 
           <article class="panel">
 
@@ -1527,6 +1708,7 @@
               id="country-list"
               class="rank-list"
             ></div>
+
 
           </article>
 
@@ -1551,9 +1733,12 @@
               class="rank-list"
             ></div>
 
+
           </article>
 
+
         </div>
+
 
       </div>
 
@@ -1568,7 +1753,9 @@
         id="view-users"
       >
 
+
         <div class="welcome-row">
+
 
           <div>
 
@@ -1586,10 +1773,12 @@
 
           </div>
 
+
         </div>
 
 
         <div class="toolbar">
+
 
           <div class="search-box">
 
@@ -1633,14 +1822,18 @@
             Limpiar
           </button>
 
+
         </div>
 
 
         <div class="panel table-panel">
 
+
           <div class="table-wrap">
 
+
             <table>
+
 
               <thead>
 
@@ -1685,12 +1878,15 @@
 
               <tbody id="users-table"></tbody>
 
+
             </table>
+
 
           </div>
 
 
           <div class="table-pagination">
+
 
             <button
               id="users-prev"
@@ -1712,9 +1908,12 @@
               Siguiente →
             </button>
 
+
           </div>
 
+
         </div>
+
 
       </div>
 
@@ -1729,6 +1928,7 @@
         id="view-user-detail"
       >
 
+
         <button
           class="back-btn"
           data-view="users"
@@ -1739,6 +1939,7 @@
 
 
         <div id="user-detail-root"></div>
+
 
       </div>
 
@@ -1753,7 +1954,9 @@
         id="view-styles"
       >
 
+
         <div class="welcome-row">
+
 
           <div>
 
@@ -1771,6 +1974,7 @@
 
           </div>
 
+
         </div>
 
 
@@ -1778,6 +1982,7 @@
           id="styles-grid"
           class="style-admin-grid"
         ></div>
+
 
       </div>
 
@@ -1792,7 +1997,9 @@
         id="view-locations"
       >
 
+
         <div class="welcome-row">
+
 
           <div>
 
@@ -1811,12 +2018,15 @@
 
           </div>
 
+
         </div>
 
 
         <div class="location-grid">
 
+
           <article class="panel map-panel">
+
 
             <div class="panel-head">
 
@@ -1836,10 +2046,12 @@
               aria-label="Mapa de usuarios"
             ></div>
 
+
           </article>
 
 
           <div class="location-side">
+
 
             <article class="panel">
 
@@ -1860,6 +2072,7 @@
                 id="location-countries"
                 class="rank-list"
               ></div>
+
 
             </article>
 
@@ -1884,11 +2097,15 @@
                 class="rank-list"
               ></div>
 
+
             </article>
+
 
           </div>
 
+
         </div>
+
 
       </div>
 
@@ -1903,7 +2120,9 @@
         id="view-announcements"
       >
 
+
         <div class="welcome-row">
+
 
           <div>
 
@@ -1921,6 +2140,7 @@
 
           </div>
 
+
           <button
             class="primary-btn compact"
             id="new-announcement"
@@ -1929,19 +2149,24 @@
             + Nuevo aviso
           </button>
 
+
         </div>
+
 
         <div
           id="announcement-active"
           class="announcement-active"
         ></div>
 
+
         <div
           id="announcements-list"
           class="announcements-list"
         ></div>
 
+
       </div>
+
 
 
       <!-- ===================================================
@@ -1953,7 +2178,9 @@
         id="view-versions"
       >
 
+
         <div class="welcome-row">
+
 
           <div>
 
@@ -1981,6 +2208,7 @@
             + Nueva versión
           </button>
 
+
         </div>
 
 
@@ -1989,11 +2217,15 @@
           class="versions-list"
         ></div>
 
+
       </div>
+
 
     </section>
 
+
   </main>
+
 
 </div>
 
@@ -2008,10 +2240,12 @@
   id="announcement-modal"
 >
 
+
   <div
     class="modal-backdrop"
     data-close-announcement
   ></div>
+
 
   <div
     class="modal-card"
@@ -2019,6 +2253,7 @@
     aria-modal="true"
     aria-labelledby="announcement-modal-title"
   >
+
 
     <button
       class="modal-close"
@@ -2029,19 +2264,24 @@
       ×
     </button>
 
+
     <p class="eyebrow">
       REMOTE CONTROL
     </p>
+
 
     <h2 id="announcement-modal-title">
       Nuevo aviso
     </h2>
 
+
     <form id="announcement-form">
+
 
       <label for="a-title">
         Título
       </label>
+
 
       <input
         id="a-title"
@@ -2050,9 +2290,11 @@
         placeholder="Mantenimiento programado"
       >
 
+
       <label for="a-message">
         Mensaje
       </label>
+
 
       <textarea
         id="a-message"
@@ -2062,36 +2304,57 @@
         placeholder="Escribe el aviso que verá DashCore..."
       ></textarea>
 
+
       <div class="form-grid">
 
+
         <div>
+
           <label for="a-expires">
             Fecha de expiración
           </label>
+
+
           <input
             id="a-expires"
             type="datetime-local"
           >
+
+
         </div>
 
+
         <div>
-          <label class="toggle-row" style="margin-top:28px">
+
+          <label
+            class="toggle-row"
+            style="margin-top:28px"
+          >
+
             <input
               id="a-active"
               type="checkbox"
               checked
             >
+
             <span class="toggle"></span>
+
             Aviso activo
+
           </label>
+
+
         </div>
 
+
       </div>
+
 
       <div
         class="form-status"
         id="announcement-status"
       ></div>
+
 
       <button
         class="primary-btn"
@@ -2100,11 +2363,15 @@
         Guardar aviso
       </button>
 
+
     </form>
+
 
   </div>
 
+
 </div>
+
 
 
 <!-- =========================================================
@@ -2115,6 +2382,7 @@
   class="modal hidden"
   id="version-modal"
 >
+
 
   <div
     class="modal-backdrop"
@@ -2128,6 +2396,7 @@
     aria-modal="true"
     aria-labelledby="version-modal-title"
   >
+
 
     <button
       class="modal-close"
@@ -2151,7 +2420,9 @@
 
     <form id="version-form">
 
+
       <div class="form-grid">
+
 
         <div>
 
@@ -2159,11 +2430,13 @@
             versionName
           </label>
 
+
           <input
             id="v-name"
             required
             placeholder="1.0.3"
           >
+
 
         </div>
 
@@ -2174,12 +2447,14 @@
             versionCode
           </label>
 
+
           <input
             id="v-code"
             type="number"
             required
             placeholder="5"
           >
+
 
         </div>
 
@@ -2190,12 +2465,14 @@
             minimumVersionCode
           </label>
 
+
           <input
             id="v-min"
             type="number"
             required
             placeholder="4"
           >
+
 
         </div>
 
@@ -2206,6 +2483,7 @@
             URL de descarga
           </label>
 
+
           <input
             id="v-url"
             type="url"
@@ -2213,7 +2491,9 @@
             placeholder="https://..."
           >
 
+
         </div>
+
 
       </div>
 
@@ -2272,9 +2552,12 @@
         Guardar versión
       </button>
 
+
     </form>
 
+
   </div>
+
 
 </div>
 
@@ -2301,4 +2584,5 @@
 
 
 </body>
+
 </html>

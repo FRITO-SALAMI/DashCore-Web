@@ -36,7 +36,6 @@ const qsa = (
 ) =>
   [...root.querySelectorAll(selector)];
 
-
 const esc = (value) =>
   String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -44,7 +43,6 @@ const esc = (value) =>
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
-
 
 const num = (value) => {
 
@@ -62,7 +60,6 @@ const num = (value) => {
     Number(value) || 0
   );
 };
-
 
 const fmt = (value) => {
 
@@ -98,7 +95,6 @@ const fmt = (value) => {
     return "—";
   }
 };
-
 
 const safeArray = (value) =>
   Array.isArray(value)
@@ -222,6 +218,11 @@ const VIEW_META = {
   versions: [
     "RELEASE CONTROL",
     "Versiones"
+  ],
+
+  announcements: [
+    "REMOTE CONTROL",
+    "Avisos"
   ]
 
 };
@@ -405,6 +406,45 @@ $("mobile-overlay")
 
 
 // ============================================================
+// ADMIN CHECK
+// ============================================================
+
+async function isCurrentUserAdmin(
+  userId
+) {
+
+  if (!userId) {
+    return false;
+  }
+
+  const {
+    data,
+    error
+  } =
+    await supabase
+      .from("admin_users")
+      .select("user_id")
+      .eq(
+        "user_id",
+        userId
+      )
+      .maybeSingle();
+
+  if (error) {
+
+    console.error(
+      "ADMIN TABLE ERROR:",
+      error
+    );
+
+    throw error;
+  }
+
+  return Boolean(data);
+}
+
+
+// ============================================================
 // LOGIN
 // ============================================================
 
@@ -459,13 +499,14 @@ $("login-form")
       if (status) {
 
         status.textContent =
-          "Verificando credenciales…";
+          "Verificando acceso administrativo…";
 
       }
 
       try {
 
         const {
+          data,
           error
         } =
           await supabase.auth.signInWithPassword({
@@ -477,26 +518,112 @@ $("login-form")
           throw error;
         }
 
+        const user =
+          data?.user;
+
+        if (!user) {
+
+          throw new Error(
+            "Supabase no devolvió el usuario."
+          );
+        }
+
+        // ----------------------------------------------------
+        // IMPORTANTE:
+        // Primero verificamos admin_users.
+        // NO mostramos "Acceso autorizado" todavía.
+        // ----------------------------------------------------
+
         if (status) {
 
           status.textContent =
-            "Acceso autorizado.";
+            "Validando permisos de administrador…";
 
+        }
+
+        const admin =
+          await isCurrentUserAdmin(
+            user.id
+          );
+
+        if (!admin) {
+
+          if (status) {
+
+            status.textContent =
+              "Esta cuenta no tiene permisos de administrador.";
+
+          }
+
+          toast(
+            "Acceso administrativo denegado.",
+            "error"
+          );
+
+          await supabase.auth.signOut();
+
+          if (button) {
+            button.disabled = false;
+          }
+
+          return;
+        }
+
+        // ----------------------------------------------------
+        // SOLO AQUÍ EL LOGIN ESTÁ REALMENTE AUTORIZADO.
+        // ----------------------------------------------------
+
+        if (status) {
+
+          status.textContent =
+            "Acceso administrativo autorizado.";
+
+        }
+
+        showApp(
+          user
+        );
+
+        startAnnouncementRealtime();
+
+        if (
+          !state.initialized
+        ) {
+
+          state.initialized =
+            true;
+
+          await loadAll();
+
+          toast(
+            "Panel administrativo conectado.",
+            "success"
+          );
+        }
+
+        if (button) {
+          button.disabled = false;
         }
 
       } catch (error) {
 
         console.error(
-          "LOGIN ERROR:",
+          "LOGIN / ADMIN ERROR:",
           error
         );
 
         let message =
-          "No fue posible iniciar sesión.";
+          "No fue posible validar el acceso.";
 
         const code =
           error?.code ||
           error?.status;
+
+        const errorMessage =
+          String(
+            error?.message ||
+            ""
+          ).toLowerCase();
 
         if (
           code ===
@@ -532,11 +659,37 @@ $("login-form")
           message =
             "No hay conexión con Supabase.";
 
+        } else if (
+          errorMessage.includes(
+            "admin_users"
+          )
+        ) {
+
+          message =
+            "No se pudo consultar la tabla de administradores. Revisa RLS de admin_users.";
+
+        } else if (
+          errorMessage.includes(
+            "permission"
+          ) ||
+          errorMessage.includes(
+            "row-level security"
+          ) ||
+          errorMessage.includes(
+            "rls"
+          )
+        ) {
+
+          message =
+            "Supabase bloqueó la validación del administrador por RLS.";
+
         }
 
         if (status) {
+
           status.textContent =
             message;
+
         }
 
         toast(
@@ -547,7 +700,9 @@ $("login-form")
         if (button) {
           button.disabled = false;
         }
+
       }
+
     }
   );
 
@@ -579,35 +734,6 @@ $("logout-btn")
       }
     }
   );
-
-
-// ============================================================
-// ADMIN CHECK
-// ============================================================
-
-async function isCurrentUserAdmin(
-  userId
-) {
-
-  const {
-    data,
-    error
-  } =
-    await supabase
-      .from("admin_users")
-      .select("user_id")
-      .eq(
-        "user_id",
-        userId
-      )
-      .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  return Boolean(data);
-}
 
 
 // ============================================================
@@ -729,6 +855,14 @@ async function handleSession(
       "AUTH VALIDATION ERROR:",
       error
     );
+
+    if ($("login-status")) {
+
+      $("login-status")
+        .textContent =
+          "No se pudo validar el administrador.";
+
+    }
 
     toast(
       "No se pudo validar el administrador.",
@@ -1136,30 +1270,46 @@ async function loadOverview() {
           item.is_active !== false
       );
 
-    $("stat-users")
-      .textContent =
-        num(
-          profiles.length
-        );
+    if ($("stat-users")) {
 
-    $("stat-active")
-      .textContent =
-        num(
-          profiles.filter(
-            (item) =>
-              item.updated_at
-          ).length
-        );
+      $("stat-users")
+        .textContent =
+          num(
+            profiles.length
+          );
 
-    $("stat-registrations")
-      .textContent =
-        "—";
+    }
 
-    $("stat-versions")
-      .textContent =
-        num(
-          activeVersions.length
-        );
+    if ($("stat-active")) {
+
+      $("stat-active")
+        .textContent =
+          num(
+            profiles.filter(
+              (item) =>
+                item.updated_at
+            ).length
+          );
+
+    }
+
+    if ($("stat-registrations")) {
+
+      $("stat-registrations")
+        .textContent =
+          "—";
+
+    }
+
+    if ($("stat-versions")) {
+
+      $("stat-versions")
+        .textContent =
+          num(
+            activeVersions.length
+          );
+
+    }
 
     renderRanks(
       "version-chart",
@@ -1219,8 +1369,12 @@ async function loadUsers(
 
   try {
 
-    let request =
-      supabase
+    const {
+      data,
+      error,
+      count
+    } =
+      await supabase
         .from("profiles")
         .select(
           `
@@ -1251,13 +1405,6 @@ async function loadUsers(
               state.usersPageSize
           ) - 1
         );
-
-    const {
-      data,
-      error,
-      count
-    } =
-      await request;
 
     if (error) {
       throw error;
@@ -1665,9 +1812,12 @@ function renderUsers() {
               openUser(
                 row.dataset.id
               );
+
             }
+
           }
         );
+
       }
     );
 }
@@ -3044,6 +3194,1069 @@ $("version-form")
 
 
 // ============================================================
+// REMOTE ANNOUNCEMENTS
+// ============================================================
+
+function ensureAnnouncementUI() {
+
+  const nav =
+    document.querySelector(
+      ".main-nav"
+    );
+
+  const content =
+    document.querySelector(
+      ".content"
+    );
+
+  if (!nav || !content) {
+    return;
+  }
+
+  if (
+    !nav.querySelector(
+      '[data-view="announcements"]'
+    )
+  ) {
+
+    const button =
+      document.createElement(
+        "button"
+      );
+
+    button.className =
+      "nav-item";
+
+    button.dataset.view =
+      "announcements";
+
+    button.type =
+      "button";
+
+    button.innerHTML =
+      `<span>!</span> Avisos`;
+
+    button.addEventListener(
+      "click",
+      () =>
+        view(
+          "announcements"
+        )
+    );
+
+    nav.appendChild(
+      button
+    );
+  }
+
+  if (
+    !$("view-announcements")
+  ) {
+
+    const section =
+      document.createElement(
+        "div"
+      );
+
+    section.className =
+      "view";
+
+    section.id =
+      "view-announcements";
+
+    section.innerHTML = `
+      <div class="welcome-row">
+
+        <div>
+
+          <p class="eyebrow">
+            REMOTE CONTROL
+          </p>
+
+          <h1>
+            Avisos
+          </h1>
+
+          <p class="muted">
+            Mensajes remotos que DashCore puede consultar cuando tenga conexión.
+          </p>
+
+        </div>
+
+        <button
+          class="primary-btn compact"
+          id="new-announcement"
+          type="button"
+        >
+          + Nuevo aviso
+        </button>
+
+      </div>
+
+      <div
+        id="announcement-active"
+        class="announcement-active"
+      ></div>
+
+      <div
+        id="announcements-list"
+        class="announcements-list"
+      ></div>
+    `;
+
+    content.appendChild(
+      section
+    );
+  }
+
+  if (
+    !$("announcement-modal")
+  ) {
+
+    const modal =
+      document.createElement(
+        "div"
+      );
+
+    modal.className =
+      "modal hidden";
+
+    modal.id =
+      "announcement-modal";
+
+    modal.innerHTML = `
+      <div
+        class="modal-backdrop"
+        data-close-announcement
+      ></div>
+
+      <div
+        class="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="announcement-modal-title"
+      >
+
+        <button
+          class="modal-close"
+          data-close-announcement
+          type="button"
+          aria-label="Cerrar"
+        >
+          ×
+        </button>
+
+        <p class="eyebrow">
+          REMOTE CONTROL
+        </p>
+
+        <h2 id="announcement-modal-title">
+          Nuevo aviso
+        </h2>
+
+        <form id="announcement-form">
+
+          <label for="a-title">
+            Título
+          </label>
+
+          <input
+            id="a-title"
+            required
+            maxlength="120"
+            placeholder="Mantenimiento programado"
+          >
+
+          <label for="a-message">
+            Mensaje
+          </label>
+
+          <textarea
+            id="a-message"
+            required
+            maxlength="2000"
+            rows="6"
+            placeholder="Escribe el aviso que verá DashCore..."
+          ></textarea>
+
+          <div class="form-grid">
+
+            <div>
+
+              <label for="a-expires">
+                Expira
+              </label>
+
+              <input
+                id="a-expires"
+                type="datetime-local"
+              >
+
+            </div>
+
+            <div>
+
+              <label
+                class="toggle-row"
+                style="margin-top:28px"
+              >
+
+                <input
+                  id="a-active"
+                  type="checkbox"
+                  checked
+                >
+
+                <span class="toggle"></span>
+
+                Aviso activo
+
+              </label>
+
+            </div>
+
+          </div>
+
+          <div
+            class="form-status"
+            id="announcement-status"
+          ></div>
+
+          <button
+            class="primary-btn"
+            type="submit"
+          >
+            Guardar aviso
+          </button>
+
+        </form>
+
+      </div>
+    `;
+
+    document.body.appendChild(
+      modal
+    );
+  }
+
+  $("new-announcement")
+    ?.addEventListener(
+      "click",
+      () =>
+        openAnnouncement()
+    );
+
+  qsa(
+    "[data-close-announcement]"
+  )
+    .forEach(
+      (el) =>
+        el.addEventListener(
+          "click",
+          closeAnnouncement
+        )
+    );
+
+  $("announcement-form")
+    ?.addEventListener(
+      "submit",
+      saveAnnouncement
+    );
+}
+
+
+function openAnnouncement(
+  id = null
+) {
+
+  ensureAnnouncementUI();
+
+  state.editingAnnouncement =
+    id;
+
+  const item =
+    state.announcements.find(
+      (x) =>
+        String(x.id) ===
+        String(id)
+    );
+
+  $("announcement-modal-title")
+    .textContent =
+      item
+        ? "Editar aviso"
+        : "Nuevo aviso";
+
+  $("announcement-form")
+    ?.reset();
+
+  $("a-active").checked =
+    item
+      ? item.is_active !== false
+      : true;
+
+  $("a-title").value =
+    item?.title ||
+    "";
+
+  $("a-message").value =
+    item?.message ||
+    "";
+
+  if (item?.expires_at) {
+
+    const d =
+      new Date(
+        item.expires_at
+      );
+
+    if (
+      !Number.isNaN(
+        d.getTime()
+      )
+    ) {
+
+      $("a-expires").value =
+        new Date(
+          d.getTime() -
+          d.getTimezoneOffset() *
+            60000
+        )
+          .toISOString()
+          .slice(
+            0,
+            16
+          );
+
+    }
+  }
+
+  $("announcement-status")
+    .textContent =
+      "";
+
+  $("announcement-modal")
+    ?.classList.remove(
+      "hidden"
+    );
+}
+
+
+function closeAnnouncement() {
+
+  $("announcement-modal")
+    ?.classList.add(
+      "hidden"
+    );
+
+  state.editingAnnouncement =
+    null;
+}
+
+
+async function loadAnnouncements() {
+
+  ensureAnnouncementUI();
+
+  const root =
+    $("announcements-list");
+
+  if (!root) {
+    return;
+  }
+
+  const {
+    data,
+    error
+  } =
+    await supabase
+      .from("remote_announcements")
+      .select("*")
+      .order(
+        "published_at",
+        {
+          ascending: false
+        }
+      )
+      .limit(50);
+
+  if (error) {
+
+    console.error(
+      "ANNOUNCEMENTS ERROR:",
+      error
+    );
+
+    root.innerHTML = `
+      <div class="empty-state">
+        No se pudieron cargar los avisos.
+        Revisa RLS y la tabla remote_announcements.
+      </div>
+    `;
+
+    return;
+  }
+
+  state.announcements =
+    data || [];
+
+  renderAnnouncements();
+}
+
+
+function isAnnouncementCurrentlyActive(
+  item
+) {
+
+  if (
+    !item ||
+    item.is_active === false
+  ) {
+    return false;
+  }
+
+  if (
+    !item.expires_at
+  ) {
+    return true;
+  }
+
+  const expiry =
+    new Date(
+      item.expires_at
+    ).getTime();
+
+  return (
+    Number.isNaN(expiry) ||
+    expiry > Date.now()
+  );
+}
+
+
+function renderAnnouncements() {
+
+  const activeRoot =
+    $("announcement-active");
+
+  const root =
+    $("announcements-list");
+
+  if (!root) {
+    return;
+  }
+
+  const active =
+    state.announcements.find(
+      isAnnouncementCurrentlyActive
+    );
+
+  if (activeRoot) {
+
+    activeRoot.innerHTML =
+      active
+        ? `
+
+      <article class="announcement-active-card">
+
+        <div>
+
+          <span class="announcement-badge">
+            ACTIVO
+          </span>
+
+          <h3>
+            ${esc(active.title)}
+          </h3>
+
+          <p>
+            ${esc(active.message)}
+          </p>
+
+        </div>
+
+        <button
+          class="ghost-btn"
+          data-edit-announcement="${esc(active.id)}"
+          type="button"
+        >
+          Editar
+        </button>
+
+      </article>
+
+    `
+        : `
+      <div class="announcement-empty">
+        No hay ningún aviso activo.
+      </div>
+    `;
+  }
+
+  if (
+    !state.announcements.length
+  ) {
+
+    root.innerHTML = `
+      <div class="empty-state">
+        No hay avisos creados.
+      </div>
+    `;
+
+    return;
+  }
+
+  root.innerHTML =
+    state.announcements
+      .map(
+        (item) => {
+
+          const activeNow =
+            isAnnouncementCurrentlyActive(
+              item
+            );
+
+          const expired =
+            item.expires_at &&
+            new Date(
+              item.expires_at
+            ).getTime() <=
+              Date.now();
+
+          return `
+      <article class="announcement-card">
+
+        <div class="announcement-card-main">
+
+          <div class="announcement-card-top">
+
+            <strong>
+              ${esc(
+                item.title ||
+                "Sin título"
+              )}
+            </strong>
+
+            <span
+              class="announcement-status ${
+                activeNow
+                  ? "success"
+                  : expired
+                    ? "expired"
+                    : ""
+              }"
+            >
+              ${
+                activeNow
+                  ? "ACTIVO"
+                  : expired
+                    ? "EXPIRADO"
+                    : "INACTIVO"
+              }
+            </span>
+
+          </div>
+
+          <p>
+            ${esc(
+              item.message ||
+              ""
+            )}
+          </p>
+
+          <small>
+            Publicado:
+            ${esc(
+              fmt(
+                item.published_at
+              )
+            )}
+
+            ${
+              item.expires_at
+                ? ` · Expira: ${esc(
+                    fmt(
+                      item.expires_at
+                    )
+                  )}`
+                : ""
+            }
+          </small>
+
+        </div>
+
+        <div class="announcement-actions">
+
+          <button
+            class="ghost-btn edit-announcement"
+            data-id="${esc(item.id)}"
+            type="button"
+          >
+            Editar
+          </button>
+
+          <button
+            class="ghost-btn toggle-announcement"
+            data-id="${esc(item.id)}"
+            type="button"
+          >
+            ${
+              item.is_active === false
+                ? "Activar"
+                : "Desactivar"
+            }
+          </button>
+
+          <button
+            class="danger-btn delete-announcement"
+            data-id="${esc(item.id)}"
+            type="button"
+          >
+            Eliminar
+          </button>
+
+        </div>
+
+      </article>
+    `;
+        }
+      )
+      .join("");
+
+  qsa(
+    ".edit-announcement"
+  )
+    .forEach(
+      (b) =>
+        b.addEventListener(
+          "click",
+          () =>
+            openAnnouncement(
+              b.dataset.id
+            )
+        )
+    );
+
+  qsa(
+    "[data-edit-announcement]"
+  )
+    .forEach(
+      (b) =>
+        b.addEventListener(
+          "click",
+          () =>
+            openAnnouncement(
+              b.dataset.editAnnouncement
+            )
+        )
+    );
+
+  qsa(
+    ".toggle-announcement"
+  )
+    .forEach(
+      (b) =>
+        b.addEventListener(
+          "click",
+          () =>
+            toggleAnnouncement(
+              b.dataset.id
+            )
+        )
+    );
+
+  qsa(
+    ".delete-announcement"
+  )
+    .forEach(
+      (b) =>
+        b.addEventListener(
+          "click",
+          () =>
+            deleteAnnouncement(
+              b.dataset.id
+            )
+        )
+    );
+}
+
+
+async function saveAnnouncement(
+  event
+) {
+
+  event.preventDefault();
+
+  const status =
+    $("announcement-status");
+
+  const title =
+    $("a-title")
+      ?.value
+      .trim();
+
+  const message =
+    $("a-message")
+      ?.value
+      .trim();
+
+  const expiresRaw =
+    $("a-expires")
+      ?.value;
+
+  const isActive =
+    $("a-active")
+      ?.checked !== false;
+
+  if (
+    !title ||
+    !message
+  ) {
+
+    if (status) {
+
+      status.textContent =
+        "Completa título y mensaje.";
+
+    }
+
+    return;
+  }
+
+  if (status) {
+
+    status.textContent =
+      "Guardando aviso…";
+
+  }
+
+  const payload = {
+
+    title,
+
+    message,
+
+    is_active:
+      isActive,
+
+    expires_at:
+      expiresRaw
+        ? new Date(
+            expiresRaw
+          ).toISOString()
+        : null,
+
+    published_at:
+      new Date().toISOString(),
+
+    metadata: {
+      source:
+        "admin"
+    }
+
+  };
+
+  try {
+
+    const wasEditing =
+      Boolean(
+        state.editingAnnouncement
+      );
+
+    let error;
+
+    if (
+      state.editingAnnouncement
+    ) {
+
+      ({
+        error
+      } =
+        await supabase
+          .from(
+            "remote_announcements"
+          )
+          .update(
+            payload
+          )
+          .eq(
+            "id",
+            state.editingAnnouncement
+          ));
+
+    } else {
+
+      ({
+        error
+      } =
+        await supabase
+          .from(
+            "remote_announcements"
+          )
+          .insert(
+            payload
+          ));
+    }
+
+    if (error) {
+      throw error;
+    }
+
+    closeAnnouncement();
+
+    await loadAnnouncements();
+
+    toast(
+      wasEditing
+        ? "Aviso actualizado."
+        : "Aviso publicado.",
+      "success"
+    );
+
+  } catch (error) {
+
+    console.error(
+      "ANNOUNCEMENT SAVE ERROR:",
+      error
+    );
+
+    if (status) {
+
+      status.textContent =
+        "No se pudo guardar. Revisa RLS y permisos de admin.";
+
+    }
+
+    toast(
+      "No se pudo guardar el aviso.",
+      "error"
+    );
+  }
+}
+
+
+async function toggleAnnouncement(
+  id
+) {
+
+  const item =
+    state.announcements.find(
+      (x) =>
+        String(x.id) ===
+        String(id)
+    );
+
+  if (!item) {
+    return;
+  }
+
+  const {
+    error
+  } =
+    await supabase
+      .from(
+        "remote_announcements"
+      )
+      .update({
+        is_active:
+          item.is_active === false
+      })
+      .eq(
+        "id",
+        id
+      );
+
+  if (error) {
+
+    console.error(
+      "ANNOUNCEMENT TOGGLE ERROR:",
+      error
+    );
+
+    toast(
+      "No se pudo cambiar el estado.",
+      "error"
+    );
+
+    return;
+  }
+
+  await loadAnnouncements();
+
+  toast(
+    item.is_active === false
+      ? "Aviso activado."
+      : "Aviso desactivado.",
+    "success"
+  );
+}
+
+
+async function deleteAnnouncement(
+  id
+) {
+
+  if (
+    !window.confirm(
+      "¿Eliminar este aviso?"
+    )
+  ) {
+    return;
+  }
+
+  const {
+    error
+  } =
+    await supabase
+      .from(
+        "remote_announcements"
+      )
+      .delete()
+      .eq(
+        "id",
+        id
+      );
+
+  if (error) {
+
+    console.error(
+      "ANNOUNCEMENT DELETE ERROR:",
+      error
+    );
+
+    toast(
+      "No se pudo eliminar el aviso.",
+      "error"
+    );
+
+    return;
+  }
+
+  await loadAnnouncements();
+
+  toast(
+    "Aviso eliminado.",
+    "success"
+  );
+}
+
+
+function startAnnouncementRealtime() {
+
+  if (
+    state.announcementChannel
+  ) {
+    return;
+  }
+
+  state.announcementChannel =
+    supabase
+      .channel(
+        "admin:remote_announcements"
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table:
+            "remote_announcements"
+        },
+        () =>
+          loadAnnouncements()
+      )
+      .subscribe(
+        (status) => {
+
+          if (
+            status ===
+            "SUBSCRIBED"
+          ) {
+
+            setConnectionState(
+              true,
+              "Supabase conectado"
+            );
+
+          }
+
+        }
+      );
+}
+
+
+async function stopAnnouncementRealtime() {
+
+  if (
+    !state.announcementChannel
+  ) {
+    return;
+  }
+
+  await supabase.removeChannel(
+    state.announcementChannel
+  );
+
+  state.announcementChannel =
+    null;
+}
+
+
+function setConnectionState(
+  online,
+  label = "Supabase"
+) {
+
+  const pill =
+    document.querySelector(
+      ".connection-pill"
+    );
+
+  if (!pill) {
+    return;
+  }
+
+  pill.classList.toggle(
+    "offline",
+    !online
+  );
+
+  pill.innerHTML =
+    `<span></span>${esc(label)}`;
+}
+
+
+window.addEventListener(
+  "online",
+  () =>
+    setConnectionState(
+      true,
+      "Supabase conectado"
+    )
+);
+
+
+window.addEventListener(
+  "offline",
+  () =>
+    setConnectionState(
+      false,
+      "Sin conexión"
+    )
+);
+
+
+ensureAnnouncementUI();
+
+
+setConnectionState(
+  navigator.onLine,
+  navigator.onLine
+    ? "Supabase conectado"
+    : "Sin conexión"
+);
+
+
+// ============================================================
 // ESC KEY
 // ============================================================
 
@@ -3068,293 +4281,20 @@ document.addEventListener(
         closeVersionModal();
 
       }
+
+      if (
+        !$("announcement-modal")
+          ?.classList.contains(
+            "hidden"
+          )
+      ) {
+
+        closeAnnouncement();
+
+      }
     }
   }
 );
-
-
-
-
-// ============================================================
-// REMOTE ANNOUNCEMENTS
-// ============================================================
-
-function ensureAnnouncementUI() {
-
-  const nav = document.querySelector(".main-nav");
-  const content = document.querySelector(".content");
-
-  if (!nav || !content) return;
-
-  if (!nav.querySelector('[data-view="announcements"]')) {
-    const button = document.createElement("button");
-    button.className = "nav-item";
-    button.dataset.view = "announcements";
-    button.type = "button";
-    button.innerHTML = `<span>!</span> Avisos`;
-    button.addEventListener("click", () => view("announcements"));
-    nav.appendChild(button);
-  }
-
-  if (!$('view-announcements')) {
-    const section = document.createElement("div");
-    section.className = "view";
-    section.id = "view-announcements";
-    section.innerHTML = `
-      <div class="welcome-row">
-        <div>
-          <p class="eyebrow">REMOTE CONTROL</p>
-          <h1>Avisos</h1>
-          <p class="muted">Mensajes remotos que DashCore puede consultar cuando tenga conexión.</p>
-        </div>
-        <button class="primary-btn compact" id="new-announcement" type="button">+ Nuevo aviso</button>
-      </div>
-      <div id="announcement-active" class="announcement-active"></div>
-      <div id="announcements-list" class="announcements-list"></div>
-    `;
-    content.appendChild(section);
-  }
-
-  if (!$('announcement-modal')) {
-    const modal = document.createElement("div");
-    modal.className = "modal hidden";
-    modal.id = "announcement-modal";
-    modal.innerHTML = `
-      <div class="modal-backdrop" data-close-announcement></div>
-      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="announcement-modal-title">
-        <button class="modal-close" data-close-announcement type="button" aria-label="Cerrar">×</button>
-        <p class="eyebrow">REMOTE CONTROL</p>
-        <h2 id="announcement-modal-title">Nuevo aviso</h2>
-        <form id="announcement-form">
-          <label for="a-title">Título</label>
-          <input id="a-title" required maxlength="120" placeholder="Mantenimiento programado">
-          <label for="a-message">Mensaje</label>
-          <textarea id="a-message" required maxlength="2000" rows="6" placeholder="Escribe el aviso que verá DashCore..."></textarea>
-          <div class="form-grid">
-            <div>
-              <label for="a-expires">Expira</label>
-              <input id="a-expires" type="datetime-local">
-            </div>
-            <div>
-              <label class="toggle-row" style="margin-top:28px">
-                <input id="a-active" type="checkbox" checked>
-                <span class="toggle"></span>
-                Aviso activo
-              </label>
-            </div>
-          </div>
-          <div class="form-status" id="announcement-status"></div>
-          <button class="primary-btn" type="submit">Guardar aviso</button>
-        </form>
-      </div>
-    `;
-    document.body.appendChild(modal);
-  }
-
-  $('new-announcement')?.addEventListener('click', () => openAnnouncement());
-  qsa('[data-close-announcement]').forEach((el) => el.addEventListener('click', closeAnnouncement));
-  $('announcement-form')?.addEventListener('submit', saveAnnouncement);
-}
-
-function openAnnouncement(id = null) {
-  ensureAnnouncementUI();
-  state.editingAnnouncement = id;
-  const item = state.announcements.find((x) => String(x.id) === String(id));
-  $('announcement-modal-title').textContent = item ? "Editar aviso" : "Nuevo aviso";
-  $('announcement-form')?.reset();
-  $('a-active').checked = item ? item.is_active !== false : true;
-  $('a-title').value = item?.title || "";
-  $('a-message').value = item?.message || "";
-  if (item?.expires_at) {
-    const d = new Date(item.expires_at);
-    if (!Number.isNaN(d.getTime())) $('a-expires').value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,16);
-  }
-  $('announcement-status').textContent = "";
-  $('announcement-modal')?.classList.remove("hidden");
-}
-
-function closeAnnouncement() {
-  $('announcement-modal')?.classList.add("hidden");
-  state.editingAnnouncement = null;
-}
-
-async function loadAnnouncements() {
-  ensureAnnouncementUI();
-  const root = $('announcements-list');
-  if (!root) return;
-
-  const { data, error } = await supabase
-    .from("remote_announcements")
-    .select("*")
-    .order("published_at", { ascending: false })
-    .limit(50);
-
-  if (error) {
-    console.error("ANNOUNCEMENTS ERROR:", error);
-    root.innerHTML = `<div class="empty-state">No se pudieron cargar los avisos. Revisa RLS y la tabla remote_announcements.</div>`;
-    return;
-  }
-
-  state.announcements = data || [];
-  renderAnnouncements();
-}
-
-function isAnnouncementCurrentlyActive(item) {
-  if (!item || item.is_active === false) return false;
-  if (!item.expires_at) return true;
-  const expiry = new Date(item.expires_at).getTime();
-  return Number.isNaN(expiry) || expiry > Date.now();
-}
-
-function renderAnnouncements() {
-  const activeRoot = $('announcement-active');
-  const root = $('announcements-list');
-  if (!root) return;
-
-  const active = state.announcements.find(isAnnouncementCurrentlyActive);
-
-  if (activeRoot) {
-    activeRoot.innerHTML = active ? `
-      <article class="announcement-active-card">
-        <div>
-          <span class="announcement-badge">ACTIVO</span>
-          <h3>${esc(active.title)}</h3>
-          <p>${esc(active.message)}</p>
-        </div>
-        <button class="ghost-btn" data-edit-announcement="${esc(active.id)}" type="button">Editar</button>
-      </article>
-    ` : `<div class="announcement-empty">No hay ningún aviso activo.</div>`;
-  }
-
-  if (!state.announcements.length) {
-    root.innerHTML = `<div class="empty-state">No hay avisos creados.</div>`;
-    return;
-  }
-
-  root.innerHTML = state.announcements.map((item) => {
-    const activeNow = isAnnouncementCurrentlyActive(item);
-    const expired = item.expires_at && new Date(item.expires_at).getTime() <= Date.now();
-    return `
-      <article class="announcement-card">
-        <div class="announcement-card-main">
-          <div class="announcement-card-top">
-            <strong>${esc(item.title || "Sin título")}</strong>
-            <span class="announcement-status ${activeNow ? "success" : expired ? "expired" : ""}">${activeNow ? "ACTIVO" : expired ? "EXPIRADO" : "INACTIVO"}</span>
-          </div>
-          <p>${esc(item.message || "")}</p>
-          <small>Publicado: ${esc(fmt(item.published_at))}${item.expires_at ? ` · Expira: ${esc(fmt(item.expires_at))}` : ""}</small>
-        </div>
-        <div class="announcement-actions">
-          <button class="ghost-btn edit-announcement" data-id="${esc(item.id)}" type="button">Editar</button>
-          <button class="ghost-btn toggle-announcement" data-id="${esc(item.id)}" type="button">${item.is_active === false ? "Activar" : "Desactivar"}</button>
-          <button class="danger-btn delete-announcement" data-id="${esc(item.id)}" type="button">Eliminar</button>
-        </div>
-      </article>
-    `;
-  }).join("");
-
-  qsa(".edit-announcement").forEach((b) => b.addEventListener("click", () => openAnnouncement(b.dataset.id)));
-  qsa("[data-edit-announcement]").forEach((b) => b.addEventListener("click", () => openAnnouncement(b.dataset.editAnnouncement)));
-  qsa(".toggle-announcement").forEach((b) => b.addEventListener("click", () => toggleAnnouncement(b.dataset.id)));
-  qsa(".delete-announcement").forEach((b) => b.addEventListener("click", () => deleteAnnouncement(b.dataset.id)));
-}
-
-async function saveAnnouncement(event) {
-  event.preventDefault();
-  const status = $('announcement-status');
-  const title = $('a-title')?.value.trim();
-  const message = $('a-message')?.value.trim();
-  const expiresRaw = $('a-expires')?.value;
-  const isActive = $('a-active')?.checked !== false;
-
-  if (!title || !message) {
-    if (status) status.textContent = "Completa título y mensaje.";
-    return;
-  }
-
-  if (status) status.textContent = "Guardando aviso…";
-
-  const payload = {
-    title,
-    message,
-    is_active: isActive,
-    expires_at: expiresRaw ? new Date(expiresRaw).toISOString() : null,
-    published_at: new Date().toISOString(),
-    metadata: { source: "admin" }
-  };
-
-  try {
-    const wasEditing = Boolean(state.editingAnnouncement);
-    let error;
-    if (state.editingAnnouncement) {
-      ({ error } = await supabase.from("remote_announcements").update(payload).eq("id", state.editingAnnouncement));
-    } else {
-      ({ error } = await supabase.from("remote_announcements").insert(payload));
-    }
-    if (error) throw error;
-    closeAnnouncement();
-    await loadAnnouncements();
-    toast(wasEditing ? "Aviso actualizado." : "Aviso publicado.", "success");
-  } catch (error) {
-    console.error("ANNOUNCEMENT SAVE ERROR:", error);
-    if (status) status.textContent = "No se pudo guardar. Revisa RLS y permisos de admin.";
-    toast("No se pudo guardar el aviso.", "error");
-  }
-}
-
-async function toggleAnnouncement(id) {
-  const item = state.announcements.find((x) => String(x.id) === String(id));
-  if (!item) return;
-  const { error } = await supabase.from("remote_announcements").update({ is_active: item.is_active === false }).eq("id", id);
-  if (error) {
-    console.error("ANNOUNCEMENT TOGGLE ERROR:", error);
-    toast("No se pudo cambiar el estado.", "error");
-    return;
-  }
-  await loadAnnouncements();
-  toast(item.is_active === false ? "Aviso activado." : "Aviso desactivado.", "success");
-}
-
-async function deleteAnnouncement(id) {
-  if (!window.confirm("¿Eliminar este aviso?")) return;
-  const { error } = await supabase.from("remote_announcements").delete().eq("id", id);
-  if (error) {
-    console.error("ANNOUNCEMENT DELETE ERROR:", error);
-    toast("No se pudo eliminar el aviso.", "error");
-    return;
-  }
-  await loadAnnouncements();
-  toast("Aviso eliminado.", "success");
-}
-
-function startAnnouncementRealtime() {
-  if (state.announcementChannel) return;
-  state.announcementChannel = supabase
-    .channel("admin:remote_announcements")
-    .on("postgres_changes", { event: "*", schema: "public", table: "remote_announcements" }, () => loadAnnouncements())
-    .subscribe((status) => {
-      if (status === "SUBSCRIBED") setConnectionState(true, "Supabase conectado");
-    });
-}
-
-async function stopAnnouncementRealtime() {
-  if (!state.announcementChannel) return;
-  await supabase.removeChannel(state.announcementChannel);
-  state.announcementChannel = null;
-}
-
-function setConnectionState(online, label = "Supabase") {
-  const pill = document.querySelector(".connection-pill");
-  if (!pill) return;
-  pill.classList.toggle("offline", !online);
-  pill.innerHTML = `<span></span>${esc(label)}`;
-}
-
-window.addEventListener("online", () => setConnectionState(true, "Supabase conectado"));
-window.addEventListener("offline", () => setConnectionState(false, "Sin conexión"));
-
-ensureAnnouncementUI();
-setConnectionState(navigator.onLine, navigator.onLine ? "Supabase conectado" : "Sin conexión");
 
 
 // ============================================================
