@@ -12,35 +12,40 @@
   <meta name="author" content="Frito-Salami">
   <meta name="robots" content="index, follow">
 
-  <link rel="canonical" href="https://dashcore-4535d.web.app/">
+  <!-- SEO -->
+  <link rel="canonical" href="https://dashcore-web.vercel.app/">
 
+  <!-- OPEN GRAPH -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="DashCore — Tu vehículo. Tu tablero.">
   <meta property="og:description" content="Convierte tu Android en un tablero digital inteligente. Visualiza los datos de tu vehículo en tiempo real mediante OBD2.">
-  <meta property="og:url" content="https://dashcore-4535d.web.app/">
+  <meta property="og:url" content="https://dashcore-web.vercel.app/">
   <meta property="og:site_name" content="DashCore">
   <meta property="og:locale" content="es_ES">
-  <meta property="og:image" content="https://dashcore-4535d.web.app/src/assets/previa.png">
+
+  <meta property="og:image" content="https://dashcore-web.vercel.app/src/assets/previa.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1536">
   <meta property="og:image:height" content="1024">
   <meta property="og:image:alt" content="DashCore — Dashboard digital inteligente para vehículos">
 
+  <!-- TWITTER / X -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="DashCore — Tu vehículo. Tu tablero.">
   <meta name="twitter:description" content="Convierte tu Android en un tablero digital inteligente. Visualiza los datos de tu vehículo en tiempo real mediante OBD2.">
-  <meta name="twitter:image" content="https://dashcore-4535d.web.app/src/assets/previa.png">
+  <meta name="twitter:image" content="https://dashcore-web.vercel.app/src/assets/previa.png">
   <meta name="twitter:image:alt" content="DashCore — Dashboard digital inteligente para vehículos">
 
   <!-- FAVICON — MISMO LOGO DE LA APP -->
   <link rel="icon" href="./src/assets/logo.png" type="image/png">
 
+  <!-- STRUCTURED DATA -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "DashCore",
-    "url": "https://dashcore-4535d.web.app/",
+    "url": "https://dashcore-web.vercel.app/",
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Android",
     "description": "Dashboard digital para Android que muestra velocidad, RPM, temperatura y otros datos del vehículo en tiempo real vía OBD2."
@@ -162,7 +167,9 @@
     }
 
     .dash-pedal:active,
-    .dash-pedal.pressed { transform: scale(.96) !important; }
+    .dash-pedal.pressed {
+      transform: scale(.96) !important;
+    }
 
     .dash-pedal.brake {
       border-color: rgba(255,90,90,.52) !important;
@@ -222,19 +229,59 @@
 
     /* TABLET / MÓVIL */
     @media (max-width: 700px) {
-      .dash-controls { right: 8px !important; bottom: 8px !important; gap: 6px !important; padding: 6px !important; border-radius: 12px !important; }
-      .dash-controls-readout { min-width: 48px !important; }
-      .dash-controls-readout small { font-size: 6px !important; }
-      .dash-controls-readout strong { font-size: 10px !important; }
-      .dash-controls-readout span { font-size: 6px !important; }
-      .dash-pedals { gap: 5px !important; }
-      .dash-pedal { width: 50px !important; height: 58px !important; min-width: 50px !important; min-height: 58px !important; border-radius: 10px !important; }
+      .dash-controls {
+        right: 8px !important;
+        bottom: 8px !important;
+        gap: 6px !important;
+        padding: 6px !important;
+        border-radius: 12px !important;
+      }
+
+      .dash-controls-readout {
+        min-width: 48px !important;
+      }
+
+      .dash-controls-readout small {
+        font-size: 6px !important;
+      }
+
+      .dash-controls-readout strong {
+        font-size: 10px !important;
+      }
+
+      .dash-controls-readout span {
+        font-size: 6px !important;
+      }
+
+      .dash-pedals {
+        gap: 5px !important;
+      }
+
+      .dash-pedal {
+        width: 50px !important;
+        height: 58px !important;
+        min-width: 50px !important;
+        min-height: 58px !important;
+        border-radius: 10px !important;
+      }
     }
 
     @media (max-width: 480px) {
-      .dash-controls-readout { display: none !important; }
-      .dash-controls { right: 7px !important; bottom: 7px !important; }
-      .dash-pedal { width: 48px !important; height: 58px !important; min-width: 48px !important; min-height: 58px !important; }
+      .dash-controls-readout {
+        display: none !important;
+      }
+
+      .dash-controls {
+        right: 7px !important;
+        bottom: 7px !important;
+      }
+
+      .dash-pedal {
+        width: 48px !important;
+        height: 58px !important;
+        min-width: 48px !important;
+        min-height: 58px !important;
+      }
     }
   </style>
 </head>
@@ -246,8 +293,6 @@
 
   <!-- =====================================================
        HEADER / NAVEGACIÓN
-       Orden alineado con el orden real de las secciones:
-       Inicio → Dashboard → Diseños → Conexión → Descargar → Actualizaciones
   ====================================================== -->
   <header class="topbar">
 
@@ -306,6 +351,7 @@
             Descargar DashCore
             <span>↓</span>
           </a>
+
           <a href="#laboratorio" class="button glass">
             Explorar dashboard
             <span>↘</span>
@@ -339,11 +385,20 @@
           <div class="rpm-display">
             <div class="rpm-label">RPM x1000</div>
             <div class="rpm-arc"></div>
+
             <div class="rpm-scale">
-              <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
+              <span>1</span>
+              <span>2</span>
+              <span>3</span>
+              <span>4</span>
+              <span>5</span>
+              <span>6</span>
+              <span>7</span>
             </div>
+
             <div class="rpm-needle" id="rpm-needle"></div>
             <div class="cluster-center-dot"></div>
+
             <strong id="rpm-value">3.42</strong>
             <small>×1000</small>
           </div>
@@ -351,20 +406,33 @@
           <!-- SPEED -->
           <div class="speed-display">
             <div class="speed-label">CURRENT SPEED</div>
+
             <strong id="speed-value">108</strong>
+
             <span>KM/H</span>
+
             <div class="speed-line"></div>
+
             <div class="drive-info">
-              <div><small>GEAR</small><strong>D</strong></div>
-              <div><small>RANGE</small><strong>412 KM</strong></div>
+              <div>
+                <small>GEAR</small>
+                <strong>D</strong>
+              </div>
+
+              <div>
+                <small>RANGE</small>
+                <strong>412 KM</strong>
+              </div>
             </div>
           </div>
 
           <!-- TEMPERATURE -->
           <div class="temp-display">
             <div class="temp-label">ENGINE TEMP</div>
+
             <div class="temp-ring">
               <div class="temp-progress" id="temp-progress"></div>
+
               <strong id="temp-value">91°</strong>
               <small>NORMAL</small>
             </div>
@@ -377,15 +445,26 @@
 
           <div class="cluster-info">
             <span class="info-icon">⚡</span>
-            <div><small>BATTERY</small><strong id="battery">14.2 V</strong></div>
+
+            <div>
+              <small>BATTERY</small>
+              <strong id="battery">14.2 V</strong>
+            </div>
           </div>
 
           <div class="cluster-info">
             <span class="info-icon">◉</span>
+
             <div>
               <small>FUEL</small>
-              <strong><span id="fuel">78</span>%</strong>
-              <div class="fuel-progress"><b id="fuel-bar"></b></div>
+
+              <strong>
+                <span id="fuel">78</span>%
+              </strong>
+
+              <div class="fuel-progress">
+                <b id="fuel-bar"></b>
+              </div>
             </div>
           </div>
 
@@ -401,8 +480,14 @@
 
       <div class="scroll-explorer">
         <span>EXPLORA EL DASHBOARD</span>
-        <div class="scroll-line"><i></i></div>
-        <div class="scroll-mouse"><b></b></div>
+
+        <div class="scroll-line">
+          <i></i>
+        </div>
+
+        <div class="scroll-mouse">
+          <b></b>
+        </div>
       </div>
 
     </section>
@@ -418,11 +503,16 @@
       <div class="lab-header" data-reveal>
 
         <div>
-          <span class="section-label">01 / DASHBOARD LIVE</span>
+
+          <span class="section-label">
+            01 / DASHBOARD LIVE
+          </span>
+
           <h2>
             Pisa el acelerador.<br>
             <strong>Siente tu tablero cobrar vida.</strong>
           </h2>
+
           <p class="lab-header-copy">
             Este no es un mockup estático.
             Mantén presionado el pedal y observa
@@ -430,6 +520,7 @@
             reaccionan en tiempo real, igual que
             dentro de tu vehículo.
           </p>
+
         </div>
 
         <div class="live-status">
@@ -452,7 +543,9 @@
             <strong>ONLINE</strong>
           </div>
 
-          <div class="dashboard-time" id="live-clock">21:41:22</div>
+          <div class="dashboard-time" id="live-clock">
+            21:41:22
+          </div>
 
           <div class="gps">
             GPS
@@ -468,65 +561,149 @@
 
           <!-- RPM -->
           <div class="modern-gauge rpm-live draggable" style="left:5%;top:17%">
-            <div class="gauge-title">ENGINE</div>
+
+            <div class="gauge-title">
+              ENGINE
+            </div>
+
             <div class="modern-arc"></div>
             <div class="modern-ticks"></div>
+
             <div class="modern-needle" id="live-rpm-needle"></div>
             <div class="needle-center"></div>
+
             <div class="modern-number">
               <strong id="live-rpm">3420</strong>
               <span>RPM</span>
             </div>
-            <div class="gauge-footer">0 ───── 7</div>
+
+            <div class="gauge-footer">
+              0 ───── 7
+            </div>
+
           </div>
 
           <!-- SPEED -->
           <div class="main-speed draggable" style="left:34%;top:7%">
-            <div class="speed-caption">DIGITAL SPEED</div>
-            <strong id="live-speed">108</strong>
-            <span>KM/H</span>
-            <div class="speed-progress"><b id="speed-progress"></b></div>
-            <div class="speed-details">
-              <div><small>GEAR</small><strong>D</strong></div>
-              <div><small>TRIP</small><strong>124.8</strong></div>
-              <div><small>AVG</small><strong>84</strong></div>
+
+            <div class="speed-caption">
+              DIGITAL SPEED
             </div>
+
+            <strong id="live-speed">
+              108
+            </strong>
+
+            <span>
+              KM/H
+            </span>
+
+            <div class="speed-progress">
+              <b id="speed-progress"></b>
+            </div>
+
+            <div class="speed-details">
+
+              <div>
+                <small>GEAR</small>
+                <strong>D</strong>
+              </div>
+
+              <div>
+                <small>TRIP</small>
+                <strong>124.8</strong>
+              </div>
+
+              <div>
+                <small>AVG</small>
+                <strong>84</strong>
+              </div>
+
+            </div>
+
           </div>
 
           <!-- TEMPERATURE -->
           <div class="modern-gauge temp-live draggable" style="left:72%;top:17%">
-            <div class="gauge-title">COOLANT</div>
-            <div class="temperature-ring">
-              <b id="live-temp-ring"></b>
-              <div>
-                <strong id="live-temp">91°</strong>
-                <span>NORMAL</span>
-              </div>
+
+            <div class="gauge-title">
+              COOLANT
             </div>
+
+            <div class="temperature-ring">
+
+              <b id="live-temp-ring"></b>
+
+              <div>
+                <strong id="live-temp">
+                  91°
+                </strong>
+
+                <span>
+                  NORMAL
+                </span>
+              </div>
+
+            </div>
+
           </div>
 
           <!-- BATTERY -->
           <div class="vehicle-card draggable" style="left:12%;top:72%">
-            <small>BATTERY</small>
-            <strong id="live-battery">14.2 V</strong>
-            <span class="stable">● STABLE</span>
+
+            <small>
+              BATTERY
+            </small>
+
+            <strong id="live-battery">
+              14.2 V
+            </strong>
+
+            <span class="stable">
+              ● STABLE
+            </span>
+
           </div>
 
           <!-- FUEL -->
           <div class="vehicle-card fuel-card draggable" style="left:38%;top:72%">
-            <small>FUEL LEVEL</small>
-            <strong><span id="live-fuel">78</span>%</strong>
-            <div class="large-fuel-bar"><b id="live-fuel-bar"></b></div>
+
+            <small>
+              FUEL LEVEL
+            </small>
+
+            <strong>
+              <span id="live-fuel">
+                78
+              </span>%
+            </strong>
+
+            <div class="large-fuel-bar">
+              <b id="live-fuel-bar"></b>
+            </div>
+
           </div>
 
           <!-- ODOMETER -->
           <div class="vehicle-card draggable" style="left:64%;top:72%">
-            <small>ODOMETER</small>
-            <strong>124842</strong>
-            <span>KM</span>
+
+            <small>
+              ODOMETER
+            </small>
+
+            <strong>
+              124842
+            </strong>
+
+            <span>
+              KM
+            </span>
+
           </div>
 
-          <div class="drag-message">ARRASTRA LOS ELEMENTOS</div>
+          <div class="drag-message">
+            ARRASTRA LOS ELEMENTOS
+          </div>
 
           <!-- =================================================
                CONTROLES INTEGRADOS AL DASHBOARD
@@ -534,24 +711,58 @@
           <div class="dash-controls">
 
             <div class="dash-controls-readout">
-              <small>THROTTLE</small>
-              <strong id="throttle-percent">0%</strong>
-              <span id="throttle-state">RALENTÍ</span>
+
+              <small>
+                THROTTLE
+              </small>
+
+              <strong id="throttle-percent">
+                0%
+              </strong>
+
+              <span id="throttle-state">
+                RALENTÍ
+              </span>
+
             </div>
 
             <div class="dash-pedals">
 
               <!-- BRAKE -->
-              <button type="button" class="dash-pedal brake" id="pedal-brake" aria-label="Frenar y volver a ralentí">
-                <span class="pedal-icon">⏻</span>
-                <span class="pedal-text">BRAKE</span>
+              <button
+                type="button"
+                class="dash-pedal brake"
+                id="pedal-brake"
+                aria-label="Frenar y volver a ralentí"
+              >
+                <span class="pedal-icon">
+                  ⏻
+                </span>
+
+                <span class="pedal-text">
+                  BRAKE
+                </span>
               </button>
 
               <!-- GAS -->
-              <button type="button" class="dash-pedal gas" id="pedal-gas" aria-label="Mantener presionado para acelerar">
-                <span class="pedal-fill" id="pedal-fill"></span>
-                <span class="pedal-icon">▲</span>
-                <span class="pedal-text">GAS</span>
+              <button
+                type="button"
+                class="dash-pedal gas"
+                id="pedal-gas"
+                aria-label="Mantener presionado para acelerar"
+              >
+                <span
+                  class="pedal-fill"
+                  id="pedal-fill"
+                ></span>
+
+                <span class="pedal-icon">
+                  ▲
+                </span>
+
+                <span class="pedal-text">
+                  GAS
+                </span>
               </button>
 
             </div>
@@ -562,9 +773,22 @@
 
         <!-- DASHBOARD STATUS -->
         <div class="dashboard-bottom">
-          <span>ECU<b></b></span>
-          <span>OBD2<b></b></span>
-          <span>LIVE TELEMETRY<b></b></span>
+
+          <span>
+            ECU
+            <b></b>
+          </span>
+
+          <span>
+            OBD2
+            <b></b>
+          </span>
+
+          <span>
+            LIVE TELEMETRY
+            <b></b>
+          </span>
+
         </div>
 
       </div>
@@ -584,55 +808,83 @@
     <section class="intro-section" id="tableros">
 
       <div class="section-head" data-reveal>
-        <div class="section-label">02 / DISEÑOS</div>
-        <div class="section-index">DASHBOARD COLLECTION</div>
+
+        <div class="section-label">
+          02 / DISEÑOS
+        </div>
+
+        <div class="section-index">
+          DASHBOARD COLLECTION
+        </div>
+
       </div>
 
       <div class="section-title" data-reveal>
+
         <h2>
           Tu vehículo.<br>
           <strong>Tu estilo.</strong>
         </h2>
+
         <p>
           Diferentes estilos para diferentes conductores.
           DashCore está diseñado para que tu tablero
           también sea parte de tu vehículo.
         </p>
+
       </div>
 
       <div class="dashboard-previews" data-reveal="stagger">
 
         <article>
+
           <div class="preview-image">
-            <img src="./src/assets/dashboard-deportivo.png" alt="Dashboard deportivo">
+            <img
+              src="./src/assets/dashboard-deportivo.png"
+              alt="Dashboard deportivo"
+            >
             <span>01</span>
           </div>
+
           <div>
             <b>Deportivo</b>
             <span>SPORT</span>
           </div>
+
         </article>
 
         <article>
+
           <div class="preview-image">
-            <img src="./src/assets/dashboard-moderno.png" alt="Dashboard moderno">
+            <img
+              src="./src/assets/dashboard-moderno.png"
+              alt="Dashboard moderno"
+            >
             <span>02</span>
           </div>
+
           <div>
             <b>Moderno</b>
             <span>MINIMAL</span>
           </div>
+
         </article>
 
         <article>
+
           <div class="preview-image">
-            <img src="./src/assets/dashboard-carrera.png" alt="Dashboard carrera">
+            <img
+              src="./src/assets/dashboard-carrera.png"
+              alt="Dashboard carrera"
+            >
             <span>03</span>
           </div>
+
           <div>
             <b>Carrera</b>
             <span>RACE</span>
           </div>
+
         </article>
 
       </div>
@@ -645,40 +897,59 @@
     <section class="simple-section" id="conexion">
 
       <div class="section-head" data-reveal>
-        <div class="section-label">03 / CONEXIÓN</div>
-        <div class="section-index">OBD2 + ANDROID</div>
+
+        <div class="section-label">
+          03 / CONEXIÓN
+        </div>
+
+        <div class="section-index">
+          OBD2 + ANDROID
+        </div>
+
       </div>
 
       <div class="two-col">
 
         <div class="section-title" data-reveal>
+
           <h2>
             Conecta.<br>
             <strong>Y conduce.</strong>
           </h2>
+
           <p>
             Conecta tu adaptador OBD2,
             empareja DashCore y transforma
             la pantalla de tu Android en
             un verdadero tablero.
           </p>
+
         </div>
 
         <div class="steps" data-reveal="stagger">
 
           <div>
             <b>01</b>
-            <span><strong>Conecta</strong> el adaptador OBD2.</span>
+            <span>
+              <strong>Conecta</strong>
+              el adaptador OBD2.
+            </span>
           </div>
 
           <div>
             <b>02</b>
-            <span><strong>Empareja</strong> tu Android con DashCore.</span>
+            <span>
+              <strong>Empareja</strong>
+              tu Android con DashCore.
+            </span>
           </div>
 
           <div>
             <b>03</b>
-            <span><strong>Conduce</strong> mientras ves tus datos.</span>
+            <span>
+              <strong>Conduce</strong>
+              mientras ves tus datos.
+            </span>
           </div>
 
         </div>
@@ -694,38 +965,87 @@
 
       <div class="download-content" data-reveal>
 
-        <span class="section-label">04 / DESCARGAR</span>
+        <span class="section-label">
+          04 / DESCARGAR
+        </span>
 
         <h2>
           Lleva DashCore<br>
           <strong>a tu vehículo.</strong>
         </h2>
 
-        <p>Elige la versión que corresponde a tu dispositivo.</p>
+        <p>
+          Elige la versión que corresponde a tu dispositivo.
+        </p>
 
         <div class="download-buttons">
 
           <!-- ANDROID 64-BIT -->
-          <a class="download-card phone" href="https://github.com/FRITO-SALAMI/DashCore/releases/download/v1.0.0/DashCorex64.apk" download>
-            <div class="download-icon"><span>▯</span></div>
-            <div class="download-card-text">
-              <small>ANDROID 64-BIT</small>
-              <strong>Versión Android</strong>
-              <span>Para teléfonos y dispositivos Android 64-bit</span>
+          <a
+            class="download-card phone"
+            href="https://github.com/FRITO-SALAMI/DashCore/releases/download/v1.0.0/DashCorex64.apk"
+            download
+          >
+
+            <div class="download-icon">
+              <span>▯</span>
             </div>
-            <div class="download-arrow">↓</div>
+
+            <div class="download-card-text">
+
+              <small>
+                ANDROID 64-BIT
+              </small>
+
+              <strong>
+                Versión Android
+              </strong>
+
+              <span>
+                Para teléfonos y dispositivos Android 64-bit
+              </span>
+
+            </div>
+
+            <div class="download-arrow">
+              ↓
+            </div>
+
           </a>
 
           <!-- ANDROID 32-BIT -->
-          <a class="download-card radio" href="https://github.com/FRITO-SALAMI/DashCore/releases/download/v1.0.0/DashCorex32.apk" download>
+          <a
+            class="download-card radio"
+            href="https://github.com/FRITO-SALAMI/DashCore/releases/download/v1.0.0/DashCorex32.apk"
+            download
+          >
+
             <div class="radio-glow"></div>
-            <div class="download-icon"><span>▣</span></div>
-            <div class="download-card-text">
-              <small>ANDROID 32-BIT ARMv7</small>
-              <strong>Versión Android 32-bit</strong>
-              <span>Para tablets y dispositivos Android 32-bit ARMv7</span>
+
+            <div class="download-icon">
+              <span>▣</span>
             </div>
-            <div class="download-arrow">↓</div>
+
+            <div class="download-card-text">
+
+              <small>
+                ANDROID 32-BIT ARMv7
+              </small>
+
+              <strong>
+                Versión Android 32-bit
+              </strong>
+
+              <span>
+                Para tablets y dispositivos Android 32-bit ARMv7
+              </span>
+
+            </div>
+
+            <div class="download-arrow">
+              ↓
+            </div>
+
           </a>
 
         </div>
@@ -749,8 +1069,17 @@
       <div class="footer-brand-block">
 
         <a class="footer-brand" href="#inicio">
-          <img src="./src/assets/logo.png" alt="DashCore" class="footer-logo">
-          <span>Dash<span>Core</span></span>
+
+          <img
+            src="./src/assets/logo.png"
+            alt="DashCore"
+            class="footer-logo"
+          >
+
+          <span>
+            Dash<span>Core</span>
+          </span>
+
         </a>
 
         <p>
@@ -767,44 +1096,106 @@
 
       <!-- NAVIGATION -->
       <div class="footer-column">
-        <span class="footer-heading">DASHCORE</span>
-        <a href="#inicio">Inicio</a>
-        <a href="#laboratorio">Dashboard</a>
-        <a href="#tableros">Diseños</a>
-        <a href="#conexion">Conexión</a>
-        <a href="#descargar">Descargar</a>
-        <a href="Actualizaciones.html">Actualizaciones</a>
+
+        <span class="footer-heading">
+          DASHCORE
+        </span>
+
+        <a href="#inicio">
+          Inicio
+        </a>
+
+        <a href="#laboratorio">
+          Dashboard
+        </a>
+
+        <a href="#tableros">
+          Diseños
+        </a>
+
+        <a href="#conexion">
+          Conexión
+        </a>
+
+        <a href="#descargar">
+          Descargar
+        </a>
+
+        <a href="Actualizaciones.html">
+          Actualizaciones
+        </a>
+
       </div>
 
       <!-- PLATFORM -->
       <div class="footer-column">
-        <span class="footer-heading">PLATAFORMA</span>
-        <span>Android</span>
-        <span>OBD2</span>
-        <span>Tiempo real</span>
-        <span>Dashboard digital</span>
+
+        <span class="footer-heading">
+          PLATAFORMA
+        </span>
+
+        <span>
+          Android
+        </span>
+
+        <span>
+          OBD2
+        </span>
+
+        <span>
+          Tiempo real
+        </span>
+
+        <span>
+          Dashboard digital
+        </span>
+
       </div>
 
       <!-- DOWNLOAD -->
       <div class="footer-download">
-        <span class="footer-heading">EMPIEZA AHORA</span>
+
+        <span class="footer-heading">
+          EMPIEZA AHORA
+        </span>
+
         <p>
           Convierte tu Android en<br>
           el tablero de tu vehículo.
         </p>
+
         <a href="#descargar" class="footer-button">
+
           DESCARGAR DASHCORE
-          <span>↗</span>
+
+          <span>
+            ↗
+          </span>
+
         </a>
+
       </div>
 
     </div>
 
     <!-- FOOTER BOTTOM -->
     <div class="footer-bottom">
-      <span>© 2026 DashCore</span>
-      <span>Diseñado para conducir.</span>
-      <span>By <strong>FRITO-SALAMI</strong></span>
+
+      <span>
+        © 2026 DashCore
+      </span>
+
+      <span>
+        Diseñado para conducir.
+      </span>
+
+      <span>
+        By
+        <strong>
+          FRITO-SALAMI
+        </strong>
+      </span>
+
     </div>
 
   </footer>
@@ -812,7 +1203,11 @@
   <!-- =====================================================
        ADMIN OCULTO
   ====================================================== -->
-  <a href="/admin/admin.html" class="hidden-admin-access" aria-label="Administración"></a>
+  <a
+    href="/admin/admin.html"
+    class="hidden-admin-access"
+    aria-label="Administración"
+  ></a>
 
   <style>
     .hidden-admin-access {
@@ -828,6 +1223,7 @@
       cursor: pointer;
       transition: opacity .2s ease, transform .2s ease;
     }
+
     .hidden-admin-access:hover {
       opacity: .65;
       transform: scale(1.4);
@@ -843,11 +1239,17 @@
        DASHCORE — RPM TACHOMETER CURSOR
   ========================================================= -->
   <div id="dcSportCursor" aria-hidden="true">
+
     <div class="dc-wheel">
+
       <div class="dc-redline"></div>
+
       <div class="dc-needle"></div>
+
       <div class="dc-center"></div>
+
     </div>
+
   </div>
 
 </body>
