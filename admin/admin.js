@@ -27,15 +27,10 @@ const supabase = createClient(
 // HELPERS
 // ============================================================
 
-const $ = (id) =>
-  document.getElementById(id);
+const $ = (id) => document.getElementById(id);
 
-const qsa = (
-  selector,
-  root = document
-) =>
+const qsa = (selector, root = document) =>
   [...root.querySelectorAll(selector)];
-
 
 const esc = (value) =>
   String(value ?? "")
@@ -45,9 +40,7 @@ const esc = (value) =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 
-
 const num = (value) => {
-
   if (
     value === null ||
     value === undefined ||
@@ -56,54 +49,101 @@ const num = (value) => {
     return "—";
   }
 
-  return new Intl.NumberFormat(
-    "es-DO"
-  ).format(
+  return new Intl.NumberFormat("es-DO").format(
     Number(value) || 0
   );
 };
 
-
 const fmt = (value) => {
-
   if (!value) {
     return "—";
   }
 
   try {
-
     const date =
       value?.toDate
         ? value.toDate()
         : new Date(value);
 
-    if (
-      Number.isNaN(
-        date.getTime()
-      )
-    ) {
+    if (Number.isNaN(date.getTime())) {
       return "—";
     }
 
-    return new Intl.DateTimeFormat(
-      "es-DO",
-      {
-        dateStyle: "medium",
-        timeStyle: "short"
-      }
-    ).format(date);
+    return new Intl.DateTimeFormat("es-DO", {
+      dateStyle: "medium",
+      timeStyle: "short"
+    }).format(date);
 
   } catch {
-
     return "—";
   }
 };
 
-
 const safeArray = (value) =>
-  Array.isArray(value)
-    ? value
-    : [];
+  Array.isArray(value) ? value : [];
+
+function parseLocation(value) {
+  if (!value) return null;
+
+  if (typeof value === "object") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object"
+        ? parsed
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+function getLocationCity(value) {
+  const location = parseLocation(value);
+  if (!location) return null;
+
+  return (
+    location.city ||
+    location.city_name ||
+    location.locality ||
+    location.town ||
+    location.municipality ||
+    null
+  );
+}
+
+function getLocationCoordinates(value) {
+  const location = parseLocation(value);
+  if (!location) return null;
+
+  const lat = Number(
+    location.lat ?? location.latitude
+  );
+
+  const lng = Number(
+    location.lng ??
+    location.lon ??
+    location.longitude
+  );
+
+  if (
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lng) ||
+    lat < -90 ||
+    lat > 90 ||
+    lng < -180 ||
+    lng > 180
+  ) {
+    return null;
+  }
+
+  return { lat, lng };
+}
 
 
 // ============================================================
@@ -111,31 +151,24 @@ const safeArray = (value) =>
 // ============================================================
 
 const state = {
-
   users: [],
-
   userPage: 1,
-
   usersPageSize: 40,
-
   currentUserCursor: null,
-
   userCursors: [],
-
   versions: [],
-
+  announcements: [],
+  editingAnnouncement: null,
   styles: [],
-
   map: null,
-
   markers: [],
-
   editingVersion: null,
-
   initialized: false,
-
-  loading: false
-
+  loading: false,
+  announcementChannel: null,
+  announcementUIReady: false,
+  authCheckInProgress: false,
+  currentAdminId: null
 };
 
 
@@ -143,41 +176,26 @@ const state = {
 // TOAST
 // ============================================================
 
-function toast(
-  message,
-  type = "info"
-) {
-
-  const root =
-    $("toast-root");
+function toast(message, type = "info") {
+  const root = $("toast-root");
 
   if (!root) {
     return;
   }
 
-  const element =
-    document.createElement("div");
+  const element = document.createElement("div");
 
-  element.className =
-    `toast ${type}`;
-
-  element.textContent =
-    message;
+  element.className = `toast ${type}`;
+  element.textContent = message;
 
   root.appendChild(element);
 
   setTimeout(() => {
-
-    element.classList.add(
-      "hide"
-    );
+    element.classList.add("hide");
 
     setTimeout(() => {
-
       element.remove();
-
     }, 250);
-
   }, 2800);
 }
 
@@ -187,90 +205,45 @@ function toast(
 // ============================================================
 
 const VIEW_META = {
-
-  overview: [
-    "CONTROL CENTER",
-    "Resumen"
-  ],
-
-  users: [
-    "COMMUNITY",
-    "Usuarios"
-  ],
-
-  "user-detail": [
-    "COMMUNITY / PROFILE",
-    "Perfil"
-  ],
-
-  styles: [
-    "DESIGN SYSTEM",
-    "Estilos"
-  ],
-
-  locations: [
-    "GEO INTELLIGENCE",
-    "Ubicaciones"
-  ],
-
-  versions: [
-    "RELEASE CONTROL",
-    "Versiones"
-  ]
-
+  overview: ["CONTROL CENTER", "Resumen"],
+  users: ["COMMUNITY", "Usuarios"],
+  "user-detail": ["COMMUNITY / PROFILE", "Perfil"],
+  styles: ["DESIGN SYSTEM", "Estilos"],
+  locations: ["GEO INTELLIGENCE", "Ubicaciones"],
+  versions: ["RELEASE CONTROL", "Versiones"],
+  announcements: ["REMOTE CONTROL", "Avisos"]
 };
 
-
 function view(name) {
-
-  const target =
-    $(`view-${name}`);
+  const target = $(`view-${name}`);
 
   if (!target) {
     return;
   }
 
-  qsa(".view")
-    .forEach((element) => {
+  qsa(".view").forEach((element) => {
+    element.classList.remove("active");
+  });
 
-      element.classList.remove(
-        "active"
-      );
+  target.classList.add("active");
 
-    });
-
-  target.classList.add(
-    "active"
-  );
-
-  qsa(".nav-item")
-    .forEach((element) => {
-
-      element.classList.toggle(
-        "active",
-        element.dataset.view === name
-      );
-
-    });
+  qsa(".nav-item").forEach((element) => {
+    element.classList.toggle(
+      "active",
+      element.dataset.view === name
+    );
+  });
 
   const meta =
     VIEW_META[name] ||
     VIEW_META.overview;
 
   if ($("view-kicker")) {
-
-    $("view-kicker")
-      .textContent =
-        meta[0];
-
+    $("view-kicker").textContent = meta[0];
   }
 
   if ($("view-title")) {
-
-    $("view-title")
-      .textContent =
-        meta[1];
-
+    $("view-title").textContent = meta[1];
   }
 
   closeMobileMenu();
@@ -280,15 +253,16 @@ function view(name) {
     behavior: "smooth"
   });
 
+  if (name === "announcements") {
+    loadAnnouncements();
+  }
+
   if (
     name === "locations" &&
     state.map
   ) {
-
     setTimeout(() => {
-
       state.map.invalidateSize();
-
     }, 250);
   }
 }
@@ -298,55 +272,23 @@ function view(name) {
 // NAVIGATION
 // ============================================================
 
-qsa(".nav-item")
-  .forEach((button) => {
-
-    button.addEventListener(
-      "click",
-      () => {
-
-        view(
-          button.dataset.view
-        );
-
-      }
-    );
-
+qsa(".nav-item").forEach((button) => {
+  button.addEventListener("click", () => {
+    view(button.dataset.view);
   });
+});
 
-
-qsa(".quick-action")
-  .forEach((button) => {
-
-    button.addEventListener(
-      "click",
-      () => {
-
-        view(
-          button.dataset.view
-        );
-
-      }
-    );
-
+qsa(".quick-action").forEach((button) => {
+  button.addEventListener("click", () => {
+    view(button.dataset.view);
   });
+});
 
-
-qsa(".back-btn")
-  .forEach((button) => {
-
-    button.addEventListener(
-      "click",
-      () => {
-
-        view(
-          button.dataset.view
-        );
-
-      }
-    );
-
+qsa(".back-btn").forEach((button) => {
+  button.addEventListener("click", () => {
+    view(button.dataset.view);
   });
+});
 
 
 // ============================================================
@@ -354,250 +296,272 @@ qsa(".back-btn")
 // ============================================================
 
 function openMobileMenu() {
-
-  $("sidebar")
-    ?.classList.add("open");
-
-  $("mobile-overlay")
-    ?.classList.add("active");
+  $("sidebar")?.classList.add("open");
+  $("mobile-overlay")?.classList.add("active");
 }
-
 
 function closeMobileMenu() {
-
-  $("sidebar")
-    ?.classList.remove("open");
-
-  $("mobile-overlay")
-    ?.classList.remove("active");
+  $("sidebar")?.classList.remove("open");
+  $("mobile-overlay")?.classList.remove("active");
 }
 
+$("mobile-menu")?.addEventListener(
+  "click",
+  openMobileMenu
+);
 
-$("mobile-menu")
-  ?.addEventListener(
-    "click",
-    openMobileMenu
-  );
+$("mobile-close")?.addEventListener(
+  "click",
+  closeMobileMenu
+);
 
-
-$("mobile-close")
-  ?.addEventListener(
-    "click",
-    closeMobileMenu
-  );
-
-
-$("mobile-overlay")
-  ?.addEventListener(
-    "click",
-    closeMobileMenu
-  );
-
-
-// ============================================================
-// LOGIN
-// ============================================================
-
-$("login-form")
-  ?.addEventListener(
-    "submit",
-    async (event) => {
-
-      event.preventDefault();
-
-      const form =
-        event.currentTarget;
-
-      const email =
-        $("login-email")
-          ?.value
-          .trim()
-          .toLowerCase();
-
-      const password =
-        $("login-password")
-          ?.value ||
-        "";
-
-      const status =
-        $("login-status");
-
-      const button =
-        form.querySelector(
-          "button[type='submit']"
-        );
-
-      if (
-        !email ||
-        !password
-      ) {
-
-        if (status) {
-
-          status.textContent =
-            "Introduce correo y contraseña.";
-
-        }
-
-        return;
-      }
-
-      if (button) {
-        button.disabled = true;
-      }
-
-      if (status) {
-
-        status.textContent =
-          "Verificando credenciales…";
-
-      }
-
-      try {
-
-        const {
-          error
-        } =
-          await supabase.auth.signInWithPassword({
-            email,
-            password
-          });
-
-        if (error) {
-          throw error;
-        }
-
-        if (status) {
-
-          status.textContent =
-            "Acceso autorizado.";
-
-        }
-
-      } catch (error) {
-
-        console.error(
-          "LOGIN ERROR:",
-          error
-        );
-
-        let message =
-          "No fue posible iniciar sesión.";
-
-        const code =
-          error?.code ||
-          error?.status;
-
-        if (
-          code ===
-            "invalid_credentials" ||
-          code ===
-            "invalid_grant"
-        ) {
-
-          message =
-            "Correo o contraseña incorrectos.";
-
-        } else if (
-          code ===
-            "email_not_confirmed"
-        ) {
-
-          message =
-            "Debes confirmar tu correo.";
-
-        } else if (
-          code ===
-            "over_request_rate_limit"
-        ) {
-
-          message =
-            "Demasiados intentos. Espera unos minutos.";
-
-        } else if (
-          code ===
-            "network_error"
-        ) {
-
-          message =
-            "No hay conexión con Supabase.";
-
-        }
-
-        if (status) {
-          status.textContent =
-            message;
-        }
-
-        toast(
-          message,
-          "error"
-        );
-
-        if (button) {
-          button.disabled = false;
-        }
-      }
-    }
-  );
-
-
-// ============================================================
-// LOGOUT
-// ============================================================
-
-$("logout-btn")
-  ?.addEventListener(
-    "click",
-    async () => {
-
-      try {
-
-        await supabase.auth.signOut();
-
-      } catch (error) {
-
-        console.error(
-          "LOGOUT ERROR:",
-          error
-        );
-
-        toast(
-          "No se pudo cerrar sesión.",
-          "error"
-        );
-      }
-    }
-  );
+$("mobile-overlay")?.addEventListener(
+  "click",
+  closeMobileMenu
+);
 
 
 // ============================================================
 // ADMIN CHECK
 // ============================================================
 
-async function isCurrentUserAdmin(
-  userId
-) {
+async function isCurrentUserAdmin(userId) {
+  if (!userId) return false;
 
   const {
     data,
     error
-  } =
-    await supabase
-      .from("admin_users")
-      .select("user_id")
-      .eq(
-        "user_id",
-        userId
-      )
-      .maybeSingle();
+  } = await supabase.rpc("is_admin");
 
   if (error) {
+    console.error(
+      "ADMIN RPC ERROR:",
+      error
+    );
     throw error;
   }
 
-  return Boolean(data);
+  return (
+    data === true ||
+    data === "true" ||
+    data === 1
+  );
 }
+
+
+// ============================================================
+// LOGIN
+// ============================================================
+
+$("login-form")?.addEventListener(
+  "submit",
+  async (event) => {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+
+    const email =
+      $("login-email")
+        ?.value
+        .trim()
+        .toLowerCase();
+
+    const password =
+      $("login-password")?.value || "";
+
+    const status = $("login-status");
+
+    const button =
+      form.querySelector(
+        "button[type='submit']"
+      );
+
+    if (!email || !password) {
+      if (status) {
+        status.textContent =
+          "Introduce correo y contraseña.";
+      }
+
+      return;
+    }
+
+    if (button) {
+      button.disabled = true;
+    }
+
+    if (status) {
+      status.textContent =
+        "Verificando acceso administrativo…";
+    }
+
+    try {
+      const {
+        data,
+        error
+      } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      const user = data?.user;
+
+      if (!user) {
+        throw new Error(
+          "Supabase no devolvió el usuario."
+        );
+      }
+
+      if (status) {
+        status.textContent =
+          "Validando permisos de administrador…";
+      }
+
+      const admin =
+        await isCurrentUserAdmin(user.id);
+
+      if (!admin) {
+        if (status) {
+          status.textContent =
+            "Esta cuenta no tiene permisos de administrador.";
+        }
+
+        toast(
+          "Acceso administrativo denegado.",
+          "error"
+        );
+
+        await supabase.auth.signOut();
+
+        if (button) {
+          button.disabled = false;
+        }
+
+        return;
+      }
+
+      if (status) {
+        status.textContent =
+          "Acceso administrativo autorizado.";
+      }
+
+      showApp(user);
+
+      startAnnouncementRealtime();
+
+      if (!state.initialized) {
+        state.initialized = true;
+
+        await loadAll();
+
+        toast(
+          "Panel administrativo conectado.",
+          "success"
+        );
+      }
+
+      if (button) {
+        button.disabled = false;
+      }
+
+    } catch (error) {
+      console.error(
+        "LOGIN / ADMIN ERROR:",
+        error
+      );
+
+      let message =
+        "No fue posible validar el acceso.";
+
+      const code =
+        error?.code ||
+        error?.status;
+
+      const errorMessage =
+        String(
+          error?.message || ""
+        ).toLowerCase();
+
+      if (
+        code === "invalid_credentials" ||
+        code === "invalid_grant"
+      ) {
+        message =
+          "Correo o contraseña incorrectos.";
+
+      } else if (
+        code === "email_not_confirmed"
+      ) {
+        message =
+          "Debes confirmar tu correo.";
+
+      } else if (
+        code === "over_request_rate_limit"
+      ) {
+        message =
+          "Demasiados intentos. Espera unos minutos.";
+
+      } else if (
+        code === "network_error"
+      ) {
+        message =
+          "No hay conexión con Supabase.";
+
+      } else if (
+        errorMessage.includes("admin_users")
+      ) {
+        message =
+          "No se pudo consultar la tabla de administradores. Revisa RLS de admin_users.";
+
+      } else if (
+        errorMessage.includes("permission") ||
+        errorMessage.includes("row-level security") ||
+        errorMessage.includes("rls")
+      ) {
+        message =
+          "Supabase bloqueó la validación del administrador por RLS.";
+      }
+
+      if (status) {
+        status.textContent = message;
+      }
+
+      toast(message, "error");
+
+      if (button) {
+        button.disabled = false;
+      }
+    }
+  }
+);
+
+
+// ============================================================
+// LOGOUT
+// ============================================================
+
+$("logout-btn")?.addEventListener(
+  "click",
+  async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error(
+        "LOGOUT ERROR:",
+        error
+      );
+
+      toast(
+        "No se pudo cerrar sesión.",
+        "error"
+      );
+    }
+  }
+);
 
 
 // ============================================================
@@ -605,44 +569,22 @@ async function isCurrentUserAdmin(
 // ============================================================
 
 supabase.auth.onAuthStateChange(
-  async (
-    event,
-    session
-  ) => {
-
-    if (
-      event ===
-      "INITIAL_SESSION"
-    ) {
-
-      await handleSession(
-        session
-      );
-
+  async (event, session) => {
+    if (event === "INITIAL_SESSION") {
+      await handleSession(session);
       return;
     }
 
     if (
-      event ===
-        "SIGNED_IN" ||
-      event ===
-        "TOKEN_REFRESHED"
+      event === "SIGNED_IN" ||
+      event === "TOKEN_REFRESHED"
     ) {
-
-      await handleSession(
-        session
-      );
-
+      await handleSession(session);
       return;
     }
 
-    if (
-      event ===
-      "SIGNED_OUT"
-    ) {
-
+    if (event === "SIGNED_OUT") {
       showLogin();
-
     }
   }
 );
@@ -652,34 +594,29 @@ supabase.auth.onAuthStateChange(
 // SESSION HANDLER
 // ============================================================
 
-async function handleSession(
-  session
-) {
-
-  if (
-    !session?.user
-  ) {
-
+async function handleSession(session) {
+  if (!session?.user) {
+    state.currentAdminId = null;
     showLogin();
-
     return;
   }
 
-  try {
+  if (state.authCheckInProgress) return;
 
+  state.authCheckInProgress = true;
+
+  try {
     const admin =
       await isCurrentUserAdmin(
         session.user.id
       );
 
     if (!admin) {
+      state.currentAdminId = null;
 
       if ($("login-status")) {
-
-        $("login-status")
-          .textContent =
-            "Esta cuenta no tiene permisos de administrador.";
-
+        $("login-status").textContent =
+          "Esta cuenta no tiene permisos de administrador.";
       }
 
       toast(
@@ -688,21 +625,17 @@ async function handleSession(
       );
 
       await supabase.auth.signOut();
-
       return;
     }
 
-    showApp(
-      session.user
-    );
+    state.currentAdminId =
+      session.user.id;
 
-    if (
-      !state.initialized
-    ) {
+    showApp(session.user);
+    startAnnouncementRealtime();
 
-      state.initialized =
-        true;
-
+    if (!state.initialized) {
+      state.initialized = true;
       await loadAll();
 
       toast(
@@ -712,18 +645,34 @@ async function handleSession(
     }
 
   } catch (error) {
-
     console.error(
       "AUTH VALIDATION ERROR:",
       error
     );
+
+    state.currentAdminId = null;
+
+    if ($("login-status")) {
+      $("login-status").textContent =
+        "No se pudo validar el administrador.";
+    }
 
     toast(
       "No se pudo validar el administrador.",
       "error"
     );
 
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (signOutError) {
+      console.error(
+        "AUTH SIGNOUT ERROR:",
+        signOutError
+      );
+    }
+
+  } finally {
+    state.authCheckInProgress = false;
   }
 }
 
@@ -733,41 +682,23 @@ async function handleSession(
 // ============================================================
 
 function showLogin() {
+  $("login-view")?.classList.remove("hidden");
+  $("app-view")?.classList.add("hidden");
 
-  $("login-view")
-    ?.classList.remove(
-      "hidden"
-    );
+  state.initialized = false;
+  state.currentAdminId = null;
+  state.authCheckInProgress = false;
 
-  $("app-view")
-    ?.classList.add(
-      "hidden"
-    );
-
-  state.initialized =
-    false;
+  stopAnnouncementRealtime();
 }
 
-
 function showApp(user) {
-
-  $("login-view")
-    ?.classList.add(
-      "hidden"
-    );
-
-  $("app-view")
-    ?.classList.remove(
-      "hidden"
-    );
+  $("login-view")?.classList.add("hidden");
+  $("app-view")?.classList.remove("hidden");
 
   if ($("admin-email")) {
-
-    $("admin-email")
-      .textContent =
-        user.email ||
-        "Administrador";
-
+    $("admin-email").textContent =
+      user.email || "Administrador";
   }
 }
 
@@ -777,26 +708,23 @@ function showApp(user) {
 // ============================================================
 
 async function loadAll() {
-
   if (state.loading) {
     return;
   }
 
-  state.loading =
-    true;
+  state.loading = true;
 
   try {
-
     await Promise.all([
       loadOverview(),
       loadUsers(true),
       loadStyles(),
       loadLocations(),
-      loadVersions()
+      loadVersions(),
+      loadAnnouncements()
     ]);
 
   } catch (error) {
-
     console.error(
       "LOAD ALL ERROR:",
       error
@@ -808,9 +736,7 @@ async function loadAll() {
     );
 
   } finally {
-
-    state.loading =
-      false;
+    state.loading = false;
   }
 }
 
@@ -819,106 +745,81 @@ async function loadAll() {
 // OVERVIEW REFRESH
 // ============================================================
 
-$("refresh-overview")
-  ?.addEventListener(
-    "click",
-    async () => {
+$("refresh-overview")?.addEventListener(
+  "click",
+  async () => {
+    const button =
+      $("refresh-overview");
 
-      const button =
-        $("refresh-overview");
+    if (button) {
+      button.disabled = true;
+    }
 
+    try {
+      await loadOverview();
+
+      toast(
+        "Datos actualizados.",
+        "success"
+      );
+    } finally {
       if (button) {
-        button.disabled = true;
-      }
-
-      try {
-
-        await loadOverview();
-
-        toast(
-          "Datos actualizados.",
-          "success"
-        );
-
-      } finally {
-
-        if (button) {
-          button.disabled = false;
-        }
+        button.disabled = false;
       }
     }
-  );
+  }
+);
 
 
 // ============================================================
 // RANK DATA
 // ============================================================
 
-function normalizeEntries(
-  data
-) {
-
+function normalizeEntries(data) {
   if (Array.isArray(data)) {
-
     return data
       .map((item) => [
-
         item?.name ??
-          item?.label ??
-          "Sin nombre",
+        item?.label ??
+        "Sin nombre",
 
         Number(
           item?.count ??
           item?.value ??
           0
         )
-
       ])
       .sort(
-        (a, b) =>
-          b[1] - a[1]
+        (a, b) => b[1] - a[1]
       );
   }
 
-  return Object.entries(
-    data || {}
-  )
-    .map(
-      ([name, count]) => [
-        name,
-        Number(count) || 0
-      ]
-    )
+  return Object.entries(data || {})
+    .map(([name, count]) => [
+      name,
+      Number(count) || 0
+    ])
     .sort(
-      (a, b) =>
-        b[1] - a[1]
+      (a, b) => b[1] - a[1]
     );
 }
-
 
 function renderRanks(
   id,
   data,
   bars = false
 ) {
-
-  const root =
-    $(id);
+  const root = $(id);
 
   if (!root) {
     return;
   }
 
   const list =
-    normalizeEntries(
-      data
-    ).slice(
-      0,
-      8
-    );
+    normalizeEntries(data)
+      .slice(0, 8);
 
   if (!list.length) {
-
     root.innerHTML = `
       <div class="empty-state">
         Sin datos todavía.
@@ -931,52 +832,35 @@ function renderRanks(
   const max =
     Math.max(
       ...list.map(
-        (item) =>
-          item[1]
+        (item) => item[1]
       ),
       1
     );
 
   if (bars) {
-
     root.innerHTML =
       list
         .map(
           ([name, count]) => {
-
             const percentage =
               Math.max(
                 5,
                 Math.min(
                   100,
-                  (count / max) *
-                    100
+                  (count / max) * 100
                 )
               );
 
             return `
               <div class="bar-row">
-
                 <div class="bar-meta">
-
-                  <span>
-                    ${esc(name)}
-                  </span>
-
-                  <strong>
-                    ${num(count)}
-                  </strong>
-
+                  <span>${esc(name)}</span>
+                  <strong>${num(count)}</strong>
                 </div>
 
                 <div class="bar-track">
-
-                  <i
-                    style="width:${percentage}%"
-                  ></i>
-
+                  <i style="width:${percentage}%"></i>
                 </div>
-
               </div>
             `;
           }
@@ -990,9 +874,7 @@ function renderRanks(
     list
       .map(
         ([name, count], index) => `
-
           <div class="rank-row">
-
             <span class="rank">
               ${String(
                 index + 1
@@ -1006,7 +888,6 @@ function renderRanks(
             <strong>
               ${num(count)}
             </strong>
-
           </div>
         `
       )
@@ -1019,43 +900,66 @@ function renderRanks(
 // ============================================================
 
 async function loadOverview() {
-
   try {
-
     const [
-      profilesResult,
+      usersResult,
       stylesResult,
-      versionsResult
-    ] =
-      await Promise.all([
+      versionsResult,
+      announcementsResult
+    ] = await Promise.all([
+      supabase
+        .from("app_users")
+        .select(`
+          id,
+          email,
+          display_name,
+          registered_at,
+          first_start_at,
+          last_login_at,
+          session_count,
+          device_model,
+          android_version,
+          manufacturer,
+          dashcore_version,
+          dashcore_build,
+          country_code,
+          language_code,
+          vehicle_brand,
+          vehicle_model,
+          vehicle_year,
+          vehicle_engine,
+          updated_at,
+          location_approx
+        `),
 
-        supabase
-          .from("profiles")
-          .select(
-            "id,username,updated_at"
-          ),
+      supabase
+        .from("user_styles")
+        .select("style_id"),
 
-        supabase
-          .from("user_styles")
-          .select(
-            "style_id"
-          ),
+      supabase
+        .from("app_versions")
+        .select(
+          "id,version_name,version_code,is_active"
+        )
+        .order(
+          "version_code",
+          { ascending: false }
+        ),
 
-        supabase
-          .from("app_versions")
-          .select(
-            "version_name,version_code,is_active"
-          )
-          .order(
-            "version_code",
-            {
-              ascending: false
-            }
-          )
-      ]);
+      supabase
+        .from("remote_announcements")
+        .select(
+          "id,title,message,is_active,published_at,expires_at"
+        )
+        .order(
+          "published_at",
+          { ascending: false }
+        )
+        .limit(50)
+    ]);
 
-    if (profilesResult.error) {
-      throw profilesResult.error;
+    if (usersResult.error) {
+      throw usersResult.error;
     }
 
     if (stylesResult.error) {
@@ -1066,54 +970,63 @@ async function loadOverview() {
       throw versionsResult.error;
     }
 
-    const profiles =
-      profilesResult.data ||
-      [];
+    if (announcementsResult.error) {
+      throw announcementsResult.error;
+    }
+
+    const users =
+      usersResult.data || [];
 
     const styles =
-      stylesResult.data ||
-      [];
+      stylesResult.data || [];
 
     const versions =
-      versionsResult.data ||
-      [];
+      versionsResult.data || [];
+
+    const announcements =
+      announcementsResult.data || [];
+
+
+    // ----------------------------------------------------------
+    // STYLE COUNTS
+    // ----------------------------------------------------------
 
     const styleCounts = {};
 
-    styles.forEach(
-      (item) => {
+    styles.forEach((item) => {
+      const id =
+        item.style_id ||
+        "unknown";
 
-        const id =
-          item.style_id ||
-          "unknown";
+      styleCounts[id] =
+        (styleCounts[id] || 0) + 1;
+    });
 
-        styleCounts[id] =
-          (
-            styleCounts[id] ||
-            0
-          ) + 1;
-      }
-    );
+
+    // ----------------------------------------------------------
+    // VERSION COUNTS
+    // ----------------------------------------------------------
 
     const versionCounts = {};
 
-    versions.forEach(
-      (item) => {
+    users.forEach((user) => {
+      const name =
+        user.dashcore_version ||
+        (
+          user.dashcore_build !== null &&
+          user.dashcore_build !== undefined
+            ? `Build ${user.dashcore_build}`
+            : "Sin versión"
+        );
 
-        const name =
-          item.version_name ||
-          String(
-            item.version_code ||
-            "—"
-          );
+      versionCounts[name] =
+        (versionCounts[name] || 0) + 1;
+    });
 
-        versionCounts[name] =
-          (
-            versionCounts[name] ||
-            0
-          ) + 1;
-      }
-    );
+
+    // ----------------------------------------------------------
+    // ACTIVE APP VERSIONS
+    // ----------------------------------------------------------
 
     const activeVersions =
       versions.filter(
@@ -1121,30 +1034,224 @@ async function loadOverview() {
           item.is_active !== false
       );
 
-    $("stat-users")
-      .textContent =
-        num(
-          profiles.length
+
+    // ----------------------------------------------------------
+    // ACTIVE ANNOUNCEMENTS
+    // ----------------------------------------------------------
+
+    const now = Date.now();
+
+    const activeAnnouncements =
+      announcements.filter(
+        (item) => {
+          if (item.is_active === false) {
+            return false;
+          }
+
+          if (!item.expires_at) {
+            return true;
+          }
+
+          const expiration =
+            new Date(
+              item.expires_at
+            ).getTime();
+
+          return (
+            !Number.isNaN(expiration) &&
+            expiration > now
+          );
+        }
+      );
+
+
+    // ----------------------------------------------------------
+    // RECENT REGISTRATIONS
+    // ----------------------------------------------------------
+
+    const thirtyDaysAgo =
+      Date.now() -
+      30 *
+        24 *
+        60 *
+        60 *
+        1000;
+
+    const recentRegistrations =
+      users.filter((user) => {
+        if (!user.registered_at) {
+          return false;
+        }
+
+        const time =
+          new Date(
+            user.registered_at
+          ).getTime();
+
+        return (
+          !Number.isNaN(time) &&
+          time >= thirtyDaysAgo
+        );
+      });
+
+
+    // ----------------------------------------------------------
+    // ACTIVE USERS
+    // ----------------------------------------------------------
+
+    const activeUsers =
+      users.filter((user) => {
+        if (!user.last_login_at) {
+          return false;
+        }
+
+        const updated =
+          new Date(
+            user.last_login_at
+          ).getTime();
+
+        return (
+          !Number.isNaN(updated) &&
+          updated >= thirtyDaysAgo
+        );
+      });
+
+
+    // ----------------------------------------------------------
+    // COUNTRY COUNTS
+    // ----------------------------------------------------------
+
+    const countryCounts = {};
+
+    users.forEach((user) => {
+      const country =
+        user.country_code ||
+        "Desconocido";
+
+      countryCounts[country] =
+        (countryCounts[country] || 0) + 1;
+    });
+
+
+    // ----------------------------------------------------------
+    // CITY COUNTS
+    // ----------------------------------------------------------
+    //
+    // location_approx es JSONB.
+    // Intentamos soportar:
+    // city / city_name / localidad / town
+    //
+
+    const cityCounts = {};
+
+    users.forEach((user) => {
+      const city =
+        getLocationCity(
+          user.location_approx
         );
 
-    $("stat-active")
-      .textContent =
+      if (!city) {
+        return;
+      }
+
+      cityCounts[city] =
+        (cityCounts[city] || 0) + 1;
+    });
+
+
+    // ----------------------------------------------------------
+    // STATS
+    // ----------------------------------------------------------
+
+    if ($("stat-users")) {
+      $("stat-users").textContent =
+        num(users.length);
+    }
+
+    if ($("stat-active")) {
+      $("stat-active").textContent =
+        num(activeUsers.length);
+    }
+
+    if ($("stat-registrations")) {
+      $("stat-registrations").textContent =
         num(
-          profiles.filter(
-            (item) =>
-              item.updated_at
-          ).length
+          recentRegistrations.length
         );
+    }
 
-    $("stat-registrations")
-      .textContent =
-        "—";
-
-    $("stat-versions")
-      .textContent =
+    if ($("stat-versions")) {
+      $("stat-versions").textContent =
         num(
           activeVersions.length
         );
+    }
+
+    if ($("stat-announcements")) {
+      $("stat-announcements").textContent =
+        num(
+          activeAnnouncements.length
+        );
+    }
+
+
+    // ----------------------------------------------------------
+    // LATEST ANNOUNCEMENT
+    // ----------------------------------------------------------
+
+    const overviewAnnouncement =
+      $("overview-announcement");
+
+    if (overviewAnnouncement) {
+      const latestActive =
+        activeAnnouncements[0];
+
+      if (latestActive) {
+        overviewAnnouncement.innerHTML = `
+          <div class="overview-announcement-card">
+
+            <span class="announcement-badge">
+              AVISO ACTIVO
+            </span>
+
+            <h3>
+              ${esc(
+                latestActive.title ||
+                "Sin título"
+              )}
+            </h3>
+
+            <p>
+              ${esc(
+                latestActive.message ||
+                ""
+              )}
+            </p>
+
+            <small>
+              Publicado:
+              ${esc(
+                fmt(
+                  latestActive.published_at
+                )
+              )}
+            </small>
+
+          </div>
+        `;
+      } else {
+        overviewAnnouncement.innerHTML = `
+          <div class="empty-state">
+            No hay avisos activos.
+          </div>
+        `;
+      }
+    }
+
+
+    // ----------------------------------------------------------
+    // CHARTS
+    // ----------------------------------------------------------
 
     renderRanks(
       "version-chart",
@@ -1159,16 +1266,27 @@ async function loadOverview() {
 
     renderRanks(
       "country-list",
-      {}
+      countryCounts
     );
 
     renderRanks(
       "city-list",
-      {}
+      cityCounts
     );
 
-  } catch (error) {
 
+    // ----------------------------------------------------------
+    // ANNOUNCEMENTS STATE
+    // ----------------------------------------------------------
+
+    if ($("view-announcements")) {
+      state.announcements =
+        announcements;
+
+      renderAnnouncements();
+    }
+
+  } catch (error) {
     console.error(
       "OVERVIEW ERROR:",
       error
@@ -1186,245 +1304,131 @@ async function loadOverview() {
 // USERS
 // ============================================================
 
-async function loadUsers(
-  reset = false
-) {
+async function loadUsers(reset = false) {
+  const root =
+    $("users-table");
 
-  if (reset) {
-
-    state.userPage =
-      1;
-
-    state.userCursors =
-      [];
-
-    state.currentUserCursor =
-      null;
+  if (!root) {
+    return;
   }
 
+  if (reset) {
+    state.userPage = 1;
+    state.currentUserCursor = null;
+    state.userCursors = [];
+  }
+
+  root.innerHTML = `
+    <tr>
+      <td colspan="8">
+        <div class="empty-state">
+          Cargando usuarios…
+        </div>
+      </td>
+    </tr>
+  `;
+
   try {
+    const from =
+      (state.userPage - 1) *
+      state.usersPageSize;
 
-    let request =
-      supabase
-        .from("profiles")
-        .select(
-          `
-          id,
-          username,
-          avatar_url,
-          updated_at
-          `,
-          {
-            count: "exact"
-          }
-        )
-        .order(
-          "updated_at",
-          {
-            ascending: false,
-            nullsFirst: false
-          }
-        )
-        .range(
-          (
-            state.userPage - 1
-          ) *
-            state.usersPageSize,
-
-          (
-            state.userPage *
-              state.usersPageSize
-          ) - 1
-        );
+    const to =
+      from +
+      state.usersPageSize -
+      1;
 
     const {
       data,
       error,
       count
     } =
-      await request;
+      await supabase
+        .from("app_users")
+        .select("*", {
+          count: "exact"
+        })
+        .order(
+          "registered_at",
+          {
+            ascending: false
+          }
+        )
+        .range(
+          from,
+          to
+        );
 
     if (error) {
       throw error;
     }
 
-    const profiles =
-      data || [];
-
-    const ids =
-      profiles.map(
-        (item) =>
-          item.id
-      );
-
-    let settings = [];
-
-    let styles = [];
-
-    if (ids.length) {
-
-      const [
-        settingsResult,
-        stylesResult
-      ] =
-        await Promise.all([
-
-          supabase
-            .from("user_settings")
-            .select(
-              `
-              user_id,
-              selected_style,
-              accent_color,
-              temp_unit,
-              language,
-              background_path,
-              model_path,
-              updated_at
-              `
-            )
-            .in(
-              "user_id",
-              ids
-            ),
-
-          supabase
-            .from("user_styles")
-            .select(
-              `
-              user_id,
-              style_id,
-              unlocked_at
-              `
-            )
-            .in(
-              "user_id",
-              ids
-            )
-
-        ]);
-
-      if (
-        settingsResult.error
-      ) {
-        throw settingsResult.error;
-      }
-
-      if (
-        stylesResult.error
-      ) {
-        throw stylesResult.error;
-      }
-
-      settings =
-        settingsResult.data ||
-        [];
-
-      styles =
-        stylesResult.data ||
-        [];
-    }
-
-    const settingsMap =
-      new Map();
-
-    settings.forEach(
-      (item) => {
-
-        settingsMap.set(
-          item.user_id,
-          item
-        );
-      }
-    );
-
-    const stylesMap =
-      new Map();
-
-    styles.forEach(
-      (item) => {
-
-        if (
-          !stylesMap.has(
-            item.user_id
-          )
-        ) {
-
-          stylesMap.set(
-            item.user_id,
-            []
-          );
-        }
-
-        stylesMap
-          .get(item.user_id)
-          .push(
-            item.style_id
-          );
-      }
-    );
-
     state.users =
-      profiles.map(
-        (profile) => {
-
-          const setting =
-            settingsMap.get(
-              profile.id
-            ) || {};
-
-          return {
-
-            ...profile,
-
-            ...setting,
-
-            unlockedStyles:
-              stylesMap.get(
-                profile.id
-              ) || []
-
-          };
-        }
-      );
+      data || [];
 
     renderUsers();
 
+    const total =
+      Number(count || 0);
+
+    const totalPages =
+      Math.max(
+        1,
+        Math.ceil(
+          total /
+          state.usersPageSize
+        )
+      );
+
+    const prev =
+      $("users-prev");
+
+    const next =
+      $("users-next");
+
+    if (prev) {
+      prev.disabled =
+        state.userPage <= 1;
+    }
+
+    if (next) {
+      next.disabled =
+        state.userPage >= totalPages;
+    }
+
+    const pageIndicator =
+      $("users-page");
+
+    if (pageIndicator) {
+      pageIndicator.textContent =
+        `${state.userPage} / ${totalPages}`;
+    }
+
+    const countElement =
+      $("users-count");
+
+    if (countElement) {
+      countElement.textContent =
+        num(total);
+    }
+
     updateFilters();
 
-    if ($("users-page")) {
-
-      $("users-page")
-        .textContent =
-          state.userPage;
-    }
-
-    if ($("users-prev")) {
-
-      $("users-prev")
-        .disabled =
-          state.userPage <= 1;
-    }
-
-    if ($("users-next")) {
-
-      $("users-next")
-        .disabled =
-          (
-            state.userPage *
-              state.usersPageSize
-          ) >=
-          (
-            count || 0
-          );
-    }
-
   } catch (error) {
-
     console.error(
       "USERS ERROR:",
       error
     );
+
+    root.innerHTML = `
+      <tr>
+        <td colspan="8">
+          <div class="empty-state">
+            No se pudieron cargar los usuarios.
+          </div>
+        </td>
+      </tr>
+    `;
 
     toast(
       "No se pudieron cargar los usuarios.",
@@ -1439,7 +1443,6 @@ async function loadUsers(
 // ============================================================
 
 function renderUsers() {
-
   const root =
     $("users-table");
 
@@ -1451,56 +1454,60 @@ function renderUsers() {
     $("user-search")
       ?.value
       .trim()
-      .toLowerCase() ||
-    "";
+      .toLowerCase() || "";
 
   const country =
     $("country-filter")
-      ?.value ||
-    "";
+      ?.value || "";
 
   const version =
     $("version-filter")
-      ?.value ||
-    "";
+      ?.value || "";
+
 
   const filtered =
-    state.users.filter(
-      (user) => {
+    state.users.filter((user) => {
 
-        const searchable =
-          [
-            user.email,
-            user.uid,
-            user.id,
-            user.username
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
+      const searchable = [
+        user.email,
+        user.display_name,
+        user.id,
+        user.device_model,
+        user.manufacturer,
+        user.dashcore_version,
+        user.country_code,
+        user.vehicle_brand,
+        user.vehicle_model
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
 
-        const matchesSearch =
-          !term ||
-          searchable.includes(
-            term
-          );
 
-        const matchesCountry =
-          !country;
+      const matchesSearch =
+        !term ||
+        searchable.includes(term);
 
-        const matchesVersion =
-          !version;
 
-        return (
-          matchesSearch &&
-          matchesCountry &&
-          matchesVersion
-        );
-      }
-    );
+      const matchesCountry =
+        !country ||
+        user.country_code === country;
+
+
+      const matchesVersion =
+        !version ||
+        user.dashcore_version === version;
+
+
+      return (
+        matchesSearch &&
+        matchesCountry &&
+        matchesVersion
+      );
+    });
+
 
   if (!filtered.length) {
-
     root.innerHTML = `
       <tr>
         <td colspan="8">
@@ -1514,147 +1521,163 @@ function renderUsers() {
     return;
   }
 
+
   root.innerHTML =
     filtered
-      .map(
-        (user) => {
+      .map((user) => {
 
-          const username =
-            user.username ||
-            "Usuario";
+        const username =
+          user.display_name ||
+          user.email ||
+          "Usuario";
 
-          const avatar =
-            username
-              .charAt(0)
-              .toUpperCase();
 
-          const version =
-            "—";
+        const avatar =
+          username
+            .charAt(0)
+            .toUpperCase();
 
-          const style =
-            user.selected_style ||
-            "sporty";
 
-          return `
-            <tr
-              data-id="${esc(
-                user.id
-              )}"
-              tabindex="0"
-            >
+        const version =
+          user.dashcore_version ||
+          (
+            user.dashcore_build !== null &&
+            user.dashcore_build !== undefined
+              ? `Build ${user.dashcore_build}`
+              : "—"
+          );
 
-              <td>
 
-                <div class="user-cell">
+        const style =
+          user.selected_style ||
+          "—";
 
-                  <span class="avatar">
-                    ${esc(avatar)}
-                  </span>
 
-                  <div>
+        return `
+          <tr
+            data-id="${esc(user.id)}"
+            tabindex="0"
+          >
 
-                    <strong>
-                      ${esc(username)}
-                    </strong>
+            <td>
+              <div class="user-cell">
 
-                    <small>
-                      ${esc(user.id)}
-                    </small>
+                <span class="avatar">
+                  ${esc(avatar)}
+                </span>
 
-                  </div>
+                <div>
+
+                  <strong>
+                    ${esc(username)}
+                  </strong>
+
+                  <small>
+                    ${esc(user.email || user.id)}
+                  </small>
 
                 </div>
 
-              </td>
+              </div>
+            </td>
 
-              <td>
-                ${esc(
-                  fmt(
-                    user.updated_at
-                  )
-                )}
-              </td>
 
-              <td>
-                ${esc(
-                  fmt(
-                    user.updated_at
-                  )
-                )}
-              </td>
+            <td>
+              ${esc(
+                fmt(
+                  user.registered_at
+                )
+              )}
+            </td>
 
-              <td>
-                —
-              </td>
 
-              <td>
-                —
-              </td>
+            <td>
+              ${esc(
+                fmt(
+                  user.last_login_at
+                )
+              )}
+            </td>
 
-              <td>
 
-                <span class="version-pill">
-                  ${esc(version)}
-                </span>
+            <td>
+              ${esc(
+                user.device_model ||
+                "—"
+              )}
+            </td>
 
-              </td>
 
-              <td>
-                ${esc(style)}
-              </td>
+            <td>
+              ${esc(
+                user.country_code ||
+                "—"
+              )}
+            </td>
 
-              <td>
-                ${esc(
-                  fmt(
-                    user.updated_at
-                  )
-                )}
-              </td>
 
-            </tr>
-          `;
-        }
-      )
+            <td>
+              <span class="version-pill">
+                ${esc(version)}
+              </span>
+            </td>
+
+
+            <td>
+              ${esc(
+                style
+              )}
+            </td>
+
+
+            <td>
+              ${esc(
+                fmt(
+                  user.updated_at
+                )
+              )}
+            </td>
+
+          </tr>
+        `;
+      })
       .join("");
+
 
   qsa(
     "#users-table tr[data-id]"
-  )
-    .forEach(
-      (row) => {
+  ).forEach((row) => {
 
-        row.addEventListener(
-          "click",
-          () => {
-
-            openUser(
-              row.dataset.id
-            );
-
-          }
-        );
-
-        row.addEventListener(
-          "keydown",
-          (event) => {
-
-            if (
-              event.key ===
-                "Enter" ||
-              event.key ===
-                " "
-            ) {
-
-              event.preventDefault();
-
-              openUser(
-                row.dataset.id
-              );
-            }
-          }
+    row.addEventListener(
+      "click",
+      () => {
+        openUser(
+          row.dataset.id
         );
       }
     );
+
+
+    row.addEventListener(
+      "keydown",
+      (event) => {
+
+        if (
+          event.key === "Enter" ||
+          event.key === " "
+        ) {
+
+          event.preventDefault();
+
+          openUser(
+            row.dataset.id
+          );
+        }
+
+      }
+    );
+
+  });
 }
 
 
@@ -1664,47 +1687,105 @@ function renderUsers() {
 
 function updateFilters() {
 
-  const countries = [];
-
-  const versions = [];
-
   const currentCountry =
-    $("country-filter")
-      ?.value ||
+    $("country-filter")?.value ||
     "";
 
   const currentVersion =
-    $("version-filter")
-      ?.value ||
+    $("version-filter")?.value ||
     "";
+
+
+  const countries =
+    [
+      ...new Set(
+        state.users
+          .map(
+            (user) =>
+              user.country_code
+          )
+          .filter(Boolean)
+      )
+    ]
+      .sort();
+
+
+  const versions =
+    [
+      ...new Set(
+        state.users
+          .map(
+            (user) =>
+              user.dashcore_version
+          )
+          .filter(Boolean)
+      )
+    ]
+      .sort()
+      .reverse();
+
 
   if ($("country-filter")) {
 
-    $("country-filter")
-      .innerHTML = `
-        <option value="">
-          Todos los países
-        </option>
-      `;
+    $("country-filter").innerHTML = `
+      <option value="">
+        Todos los países
+      </option>
 
-    $("country-filter")
-      .value =
+      ${
+        countries
+          .map(
+            (country) => `
+              <option value="${esc(country)}">
+                ${esc(country)}
+              </option>
+            `
+          )
+          .join("")
+      }
+    `;
+
+    if (
+      countries.includes(
+        currentCountry
+      )
+    ) {
+      $("country-filter").value =
         currentCountry;
+    }
   }
+
 
   if ($("version-filter")) {
 
-    $("version-filter")
-      .innerHTML = `
-        <option value="">
-          Todas las versiones
-        </option>
-      `;
+    $("version-filter").innerHTML = `
+      <option value="">
+        Todas las versiones
+      </option>
 
-    $("version-filter")
-      .value =
+      ${
+        versions
+          .map(
+            (version) => `
+              <option value="${esc(version)}">
+                ${esc(version)}
+              </option>
+            `
+          )
+          .join("")
+      }
+    `;
+
+    if (
+      versions.includes(
+        currentVersion
+      )
+    ) {
+      $("version-filter").value =
         currentVersion;
+    }
   }
+
 
   return {
     countries,
@@ -1717,98 +1798,85 @@ function updateFilters() {
   "user-search",
   "country-filter",
   "version-filter"
-]
-  .forEach(
-    (id) => {
+].forEach((id) => {
 
-      $(id)
-        ?.addEventListener(
-          "input",
-          renderUsers
-        );
-
-      $(id)
-        ?.addEventListener(
-          "change",
-          renderUsers
-        );
-
-    }
+  $(id)?.addEventListener(
+    "input",
+    renderUsers
   );
 
-
-$("clear-user-filters")
-  ?.addEventListener(
-    "click",
-    () => {
-
-      if ($("user-search")) {
-        $("user-search").value =
-          "";
-      }
-
-      if ($("country-filter")) {
-        $("country-filter").value =
-          "";
-      }
-
-      if ($("version-filter")) {
-        $("version-filter").value =
-          "";
-      }
-
-      renderUsers();
-    }
+  $(id)?.addEventListener(
+    "change",
+    renderUsers
   );
+
+});
+
+
+$("clear-user-filters")?.addEventListener(
+  "click",
+  () => {
+
+    if ($("user-search")) {
+      $("user-search").value = "";
+    }
+
+    if ($("country-filter")) {
+      $("country-filter").value = "";
+    }
+
+    if ($("version-filter")) {
+      $("version-filter").value = "";
+    }
+
+    renderUsers();
+
+  }
+);
 
 
 // ============================================================
 // USER PAGINATION
 // ============================================================
 
-$("users-next")
-  ?.addEventListener(
-    "click",
-    async () => {
+$("users-next")?.addEventListener(
+  "click",
+  async () => {
 
-      if (
-        $("users-next").disabled
-      ) {
-        return;
-      }
+    const button =
+      $("users-next");
 
-      state.userPage++;
-
-      await loadUsers();
+    if (button?.disabled) {
+      return;
     }
-  );
+
+    state.userPage++;
+
+    await loadUsers();
+  }
+);
 
 
-$("users-prev")
-  ?.addEventListener(
-    "click",
-    async () => {
+$("users-prev")?.addEventListener(
+  "click",
+  async () => {
 
-      if (
-        state.userPage <= 1
-      ) {
-        return;
-      }
-
-      state.userPage--;
-
-      await loadUsers();
+    if (state.userPage <= 1) {
+      return;
     }
-  );
+
+    state.userPage--;
+
+    await loadUsers();
+  }
+);
 
 
 // ============================================================
 // USER DETAIL
 // ============================================================
 
-async function openUser(
-  id
-) {
+async function openUser(id) {
 
   if (!id) {
     return;
@@ -1824,21 +1892,15 @@ async function openUser(
       await Promise.all([
 
         supabase
-          .from("profiles")
+          .from("app_users")
           .select("*")
-          .eq(
-            "id",
-            id
-          )
+          .eq("id", id)
           .maybeSingle(),
 
         supabase
           .from("user_settings")
           .select("*")
-          .eq(
-            "user_id",
-            id
-          )
+          .eq("user_id", id)
           .maybeSingle(),
 
         supabase
@@ -1846,36 +1908,27 @@ async function openUser(
           .select(
             "style_id,unlocked_at"
           )
-          .eq(
-            "user_id",
-            id
-          )
+          .eq("user_id", id)
           .order(
             "unlocked_at",
-            {
-              ascending: false
-            }
+            { ascending: false }
           )
 
       ]);
 
-    if (
-      profileResult.error
-    ) {
+
+    if (profileResult.error) {
       throw profileResult.error;
     }
 
-    if (
-      settingsResult.error
-    ) {
+    if (settingsResult.error) {
       throw settingsResult.error;
     }
 
-    if (
-      stylesResult.error
-    ) {
+    if (stylesResult.error) {
       throw stylesResult.error;
     }
+
 
     if (!profileResult.data) {
 
@@ -1887,26 +1940,34 @@ async function openUser(
       return;
     }
 
-    const user =
-      {
-        ...profileResult.data,
-        ...(settingsResult.data ||
-          {})
-      };
+
+    const user = {
+      ...profileResult.data,
+      ...(settingsResult.data || {})
+    };
+
 
     const styles =
       safeArray(
         stylesResult.data
       );
 
+
     const username =
-      user.username ||
+      user.display_name ||
+      user.email ||
       "Usuario";
+
 
     const avatar =
       username
         .charAt(0)
         .toUpperCase();
+
+
+    // ----------------------------------------------------------
+    // ACCOUNT
+    // ----------------------------------------------------------
 
     const accountRows = [
 
@@ -1916,8 +1977,39 @@ async function openUser(
       ],
 
       [
-        "Usuario",
-        user.username
+        "Nombre",
+        user.display_name
+      ],
+
+      [
+        "Correo",
+        user.email
+      ],
+
+      [
+        "Registrado",
+        fmt(
+          user.registered_at
+        )
+      ],
+
+      [
+        "Primer inicio",
+        fmt(
+          user.first_start_at
+        )
+      ],
+
+      [
+        "Último login",
+        fmt(
+          user.last_login_at
+        )
+      ],
+
+      [
+        "Sesiones",
+        user.session_count
       ],
 
       [
@@ -1929,29 +2021,83 @@ async function openUser(
 
     ];
 
+
+    // ----------------------------------------------------------
+    // DEVICE
+    // ----------------------------------------------------------
+
     const deviceRows = [
 
       [
-        "Modelo",
-        "No registrado"
+        "Fabricante",
+        user.manufacturer
       ],
 
       [
-        "Sistema",
-        "No registrado"
+        "Modelo",
+        user.device_model
+      ],
+
+      [
+        "Android",
+        user.android_version
+      ],
+
+      [
+        "DashCore",
+        user.dashcore_version
+      ],
+
+      [
+        "Build",
+        user.dashcore_build
       ],
 
       [
         "Idioma",
-        user.language
+        user.language_code
       ],
 
       [
-        "Unidad",
-        user.temp_unit
+        "País",
+        user.country_code
       ]
 
     ];
+
+
+    // ----------------------------------------------------------
+    // VEHICLE
+    // ----------------------------------------------------------
+
+    const vehicleRows = [
+
+      [
+        "Marca",
+        user.vehicle_brand
+      ],
+
+      [
+        "Modelo",
+        user.vehicle_model
+      ],
+
+      [
+        "Año",
+        user.vehicle_year
+      ],
+
+      [
+        "Motor",
+        user.vehicle_engine
+      ]
+
+    ];
+
+
+    // ----------------------------------------------------------
+    // PREFERENCES
+    // ----------------------------------------------------------
 
     const preferenceRows = [
 
@@ -1966,6 +2112,17 @@ async function openUser(
       ],
 
       [
+        "Unidad",
+        user.temp_unit
+      ],
+
+      [
+        "Idioma",
+        user.language ||
+        user.language_code
+      ],
+
+      [
         "Fondo",
         user.background_path
       ],
@@ -1977,225 +2134,277 @@ async function openUser(
 
     ];
 
-    const rows =
-      (items) =>
-        items
-          .map(
-            ([label, value]) => `
 
-              <div>
+    const rows = (items) =>
+      items
+        .map(
+          ([label, value]) => `
+            <div>
 
-                <span>
-                  ${esc(label)}
-                </span>
+              <span>
+                ${esc(label)}
+              </span>
 
-                <strong>
-                  ${esc(
-                    value ||
-                    "—"
-                  )}
-                </strong>
+              <strong>
+                ${esc(
+                  value === null ||
+                  value === undefined ||
+                  value === ""
+                    ? "—"
+                    : value
+                )}
+              </strong>
 
-              </div>
+            </div>
+          `
+        )
+        .join("");
 
-            `
-          )
-          .join("");
 
-    $("user-detail-root")
-      .innerHTML = `
+    $("user-detail-root").innerHTML = `
 
-        <div class="profile-head">
+      <div class="profile-head">
 
-          <div class="profile-avatar">
-            ${esc(avatar)}
-          </div>
+        <div class="profile-avatar">
+          ${esc(avatar)}
+        </div>
 
-          <div>
+        <div>
 
-            <p class="eyebrow">
-              USER PROFILE
-            </p>
+          <p class="eyebrow">
+            USER PROFILE
+          </p>
 
-            <h1>
-              ${esc(username)}
-            </h1>
+          <h1>
+            ${esc(username)}
+          </h1>
 
-            <p class="muted">
-              ${esc(user.id)}
-            </p>
-
-          </div>
-
-          <span class="role-badge">
-            USER
-          </span>
+          <p class="muted">
+            ${esc(user.email || user.id)}
+          </p>
 
         </div>
 
+        <span class="role-badge">
+          USER
+        </span>
 
-        <div class="profile-grid">
-
-
-          <article class="panel">
-
-            <div class="panel-head">
-
-              <p class="eyebrow">
-                IDENTIDAD
-              </p>
-
-              <h3>
-                Cuenta
-              </h3>
-
-            </div>
-
-            <div class="detail-list">
-              ${rows(
-                accountRows
-              )}
-            </div>
-
-          </article>
+      </div>
 
 
-          <article class="panel">
-
-            <div class="panel-head">
-
-              <p class="eyebrow">
-                ENTORNO
-              </p>
-
-              <h3>
-                Configuración
-              </h3>
-
-            </div>
-
-            <div class="detail-list">
-              ${rows(
-                deviceRows
-              )}
-            </div>
-
-          </article>
+      <div class="profile-grid">
 
 
-          <article class="panel">
-
-            <div class="panel-head">
-
-              <p class="eyebrow">
-                DISEÑOS
-              </p>
-
-              <h3>
-                Estilos desbloqueados
-              </h3>
-
-            </div>
-
-            <div class="chips">
-
-              ${
-                styles.length
-                  ? styles
-                      .map(
-                        (style) => `
-
-                          <span class="chip">
-                            ${esc(
-                              style.style_id
-                            )}
-                          </span>
-
-                        `
-                      )
-                      .join("")
-                  : `
-
-                    <span class="muted">
-                      Sin estilos registrados.
-                    </span>
-
-                  `
-              }
-
-            </div>
-
-          </article>
-
-
-          <article class="panel">
-
-            <div class="panel-head">
-
-              <p class="eyebrow">
-                PREFERENCIAS
-              </p>
-
-              <h3>
-                DashCore
-              </h3>
-
-            </div>
-
-            <div class="detail-list">
-              ${rows(
-                preferenceRows
-              )}
-            </div>
-
-          </article>
-
-
-        </div>
-
-
-        <article class="panel activity-panel">
+        <article class="panel">
 
           <div class="panel-head">
 
             <p class="eyebrow">
-              STATUS
+              IDENTIDAD
             </p>
 
             <h3>
-              Estado de sincronización
+              Cuenta
             </h3>
 
           </div>
 
-          <div class="activity-row">
+          <div class="detail-list">
+            ${rows(accountRows)}
+          </div>
 
-            <span class="activity-dot"></span>
+        </article>
 
-            <div>
 
-              <strong>
-                Perfil sincronizado
-              </strong>
+        <article class="panel">
 
-              <small>
-                ${esc(
-                  fmt(
-                    user.updated_at
-                  )
-                )}
-              </small>
+          <div class="panel-head">
 
-            </div>
+            <p class="eyebrow">
+              DISPOSITIVO
+            </p>
+
+            <h3>
+              Entorno
+            </h3>
+
+          </div>
+
+          <div class="detail-list">
+            ${rows(deviceRows)}
+          </div>
+
+        </article>
+
+
+        <article class="panel">
+
+          <div class="panel-head">
+
+            <p class="eyebrow">
+              VEHÍCULO
+            </p>
+
+            <h3>
+              Vehículo registrado
+            </h3>
+
+          </div>
+
+          <div class="detail-list">
+            ${rows(vehicleRows)}
+          </div>
+
+        </article>
+
+
+        <article class="panel">
+
+          <div class="panel-head">
+
+            <p class="eyebrow">
+              DISEÑOS
+            </p>
+
+            <h3>
+              Estilos desbloqueados
+            </h3>
+
+          </div>
+
+          <div class="chips">
+
+            ${
+              styles.length
+                ? styles
+                    .map(
+                      (style) => `
+                        <span class="chip">
+                          ${esc(
+                            style.style_id
+                          )}
+                        </span>
+                      `
+                    )
+                    .join("")
+
+                : `
+                    <span class="muted">
+                      Sin estilos registrados.
+                    </span>
+                  `
+            }
 
           </div>
 
         </article>
-      `;
 
-    view(
-      "user-detail"
-    );
+
+        <article class="panel">
+
+          <div class="panel-head">
+
+            <p class="eyebrow">
+              PREFERENCIAS
+            </p>
+
+            <h3>
+              DashCore
+            </h3>
+
+          </div>
+
+          <div class="detail-list">
+            ${rows(preferenceRows)}
+          </div>
+
+        </article>
+
+
+        <article class="panel">
+
+          <div class="panel-head">
+
+            <p class="eyebrow">
+              GEO INTELLIGENCE
+            </p>
+
+            <h3>
+              Ubicación aproximada
+            </h3>
+
+          </div>
+
+          <div class="detail-list">
+
+            ${rows([
+              [
+                "País",
+                user.country_code
+              ],
+
+              [
+                "Datos",
+                user.location_approx
+                  ? JSON.stringify(
+                      user.location_approx
+                    )
+                  : null
+              ]
+            ])}
+
+          </div>
+
+        </article>
+
+
+      </div>
+
+
+      <article class="panel activity-panel">
+
+        <div class="panel-head">
+
+          <p class="eyebrow">
+            STATUS
+          </p>
+
+          <h3>
+            Estado de sincronización
+          </h3>
+
+        </div>
+
+
+        <div class="activity-row">
+
+          <span class="activity-dot"></span>
+
+          <div>
+
+            <strong>
+              Perfil sincronizado
+            </strong>
+
+            <small>
+              ${esc(
+                fmt(
+                  user.updated_at
+                )
+              )}
+            </small>
+
+          </div>
+
+        </div>
+
+      </article>
+
+    `;
+
+
+    view("user-detail");
+
 
   } catch (error) {
 
@@ -2208,6 +2417,7 @@ async function openUser(
       "No se pudo cargar el perfil.",
       "error"
     );
+
   }
 }
 
@@ -2233,53 +2443,43 @@ async function loadStyles() {
     } =
       await supabase
         .from("user_styles")
-        .select(
-          "style_id"
-        );
+        .select("style_id");
+
 
     if (error) {
       throw error;
     }
 
+
     const counts = {};
 
-    (data || [])
-      .forEach(
-        (item) => {
 
-          const id =
-            item.style_id ||
-            "unknown";
+    (data || []).forEach((item) => {
 
-          counts[id] =
-            (
-              counts[id] ||
-              0
-            ) + 1;
+      const id =
+        item.style_id ||
+        "unknown";
 
-        }
-      );
+      counts[id] =
+        (counts[id] || 0) + 1;
+
+    });
+
 
     state.styles =
-      Object.entries(
-        counts
-      )
-        .map(
-          ([id, count]) => ({
-            id,
-            usageCount:
-              count
-          })
-        )
+      Object.entries(counts)
+        .map(([id, count]) => ({
+          id,
+          usageCount: count
+        }))
         .sort(
           (a, b) =>
             b.usageCount -
             a.usageCount
         );
 
-    if (
-      !state.styles.length
-    ) {
+
+    if (!state.styles.length) {
 
       root.innerHTML = `
         <div class="empty-state">
@@ -2290,11 +2490,11 @@ async function loadStyles() {
       return;
     }
 
+
     root.innerHTML =
       state.styles
         .map(
           (style) => `
-
             <article class="style-card">
 
               <div class="style-preview">
@@ -2312,33 +2512,25 @@ async function loadStyles() {
 
               </div>
 
-
               <div class="style-card-body">
 
                 <div>
 
                   <h3>
-                    ${esc(
-                      style.id
-                    )}
+                    ${esc(style.id)}
                   </h3>
 
                   <small>
-                    ${esc(
-                      style.id
-                    )}
+                    ${esc(style.id)}
                   </small>
 
                 </div>
 
                 <strong>
-                  ${num(
-                    style.usageCount
-                  )}
+                  ${num(style.usageCount)}
                 </strong>
 
               </div>
-
 
               <div class="style-card-foot">
 
@@ -2347,18 +2539,16 @@ async function loadStyles() {
                 </span>
 
                 <span>
-                  ${num(
-                    style.usageCount
-                  )}
+                  ${num(style.usageCount)}
                 </span>
 
               </div>
 
             </article>
-
           `
         )
         .join("");
+
 
   } catch (error) {
 
@@ -2372,6 +2562,7 @@ async function loadStyles() {
         No se pudieron cargar los estilos.
       </div>
     `;
+
   }
 }
 
@@ -2388,28 +2579,193 @@ async function loadLocations() {
   const cityRoot =
     $("location-cities");
 
-  if (countryRoot) {
 
-    countryRoot.innerHTML = `
-      <div class="empty-state">
-        No hay columnas de ubicación
-        en el esquema actual.
-      </div>
-    `;
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabase
+        .from("app_users")
+        .select(
+          "country_code,location_approx"
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    const countryCounts = {};
+    const cityCounts = {};
+
+
+    (data || []).forEach((user) => {
+
+      const country =
+        user.country_code ||
+        "Desconocido";
+
+      countryCounts[country] =
+        (countryCounts[country] || 0) + 1;
+
+
+      const location =
+        user.location_approx;
+
+
+      if (
+        location &&
+        typeof location === "object"
+      ) {
+
+        const city =
+          location.city ||
+          location.city_name ||
+          location.locality ||
+          location.town;
+
+
+        if (city) {
+          cityCounts[city] =
+            (cityCounts[city] || 0) + 1;
+        }
+
+      }
+
+    });
+
+
+    if (countryRoot) {
+      renderRanks(
+        "location-countries",
+        countryCounts
+      );
+    }
+
+
+    if (cityRoot) {
+      renderRanks(
+        "location-cities",
+        cityCounts
+      );
+    }
+
+
+    initializeMap();
+
+    clearMarkers();
+
+
+    // ----------------------------------------------------------
+    // MAP MARKERS
+    // ----------------------------------------------------------
+
+    if (
+      state.map &&
+      Array.isArray(data)
+    ) {
+
+      data.forEach((user) => {
+
+        const location =
+          user.location_approx;
+
+
+        if (
+          !location ||
+          typeof location !== "object"
+        ) {
+          return;
+        }
+
+
+        const lat =
+          Number(
+            location.lat ??
+            location.latitude
+          );
+
+
+        const lng =
+          Number(
+            location.lng ??
+            location.lon ??
+            location.longitude
+          );
+
+
+        if (
+          !Number.isFinite(lat) ||
+          !Number.isFinite(lng)
+        ) {
+          return;
+        }
+
+
+        const marker =
+          L.marker([
+            lat,
+            lng
+          ]);
+
+
+        marker
+          .bindPopup(`
+            <strong>
+              ${esc(
+                user.country_code ||
+                "Usuario"
+              )}
+            </strong>
+          `)
+          .addTo(
+            state.map
+          );
+
+
+        state.markers.push(
+          marker
+        );
+
+      });
+
+    }
+
+
+  } catch (error) {
+
+    console.error(
+      "LOCATIONS ERROR:",
+      error
+    );
+
+
+    if (countryRoot) {
+      countryRoot.innerHTML = `
+        <div class="empty-state">
+          No se pudieron cargar las ubicaciones.
+        </div>
+      `;
+    }
+
+
+    if (cityRoot) {
+      cityRoot.innerHTML = `
+        <div class="empty-state">
+          No se pudieron cargar las ubicaciones.
+        </div>
+      `;
+    }
+
+
+    initializeMap();
+
+    clearMarkers();
+
   }
-
-  if (cityRoot) {
-
-    cityRoot.innerHTML = `
-      <div class="empty-state">
-        Ubicaciones no configuradas.
-      </div>
-    `;
-  }
-
-  initializeMap();
-
-  clearMarkers();
 }
 
 
@@ -2421,18 +2777,20 @@ function initializeMap() {
 
   if (
     state.map ||
-    typeof L ===
-      "undefined"
+    typeof L === "undefined"
   ) {
     return;
   }
 
+
   const mapElement =
     $("map");
+
 
   if (!mapElement) {
     return;
   }
+
 
   state.map =
     L.map(
@@ -2445,18 +2803,18 @@ function initializeMap() {
       2
     );
 
+
   L.control.zoom({
-    position:
-      "bottomright"
+    position: "bottomright"
   }).addTo(
     state.map
   );
+
 
   L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     {
       maxZoom: 18,
-
       attribution:
         "© OpenStreetMap contributors"
     }
@@ -2468,17 +2826,12 @@ function initializeMap() {
 
 function clearMarkers() {
 
-  state.markers
-    .forEach(
-      (marker) => {
+  state.markers.forEach(
+    (marker) =>
+      marker.remove()
+  );
 
-        marker.remove();
-
-      }
-    );
-
-  state.markers =
-    [];
+  state.markers = [];
 }
 
 
@@ -2494,6 +2847,7 @@ async function loadVersions() {
   if (!root) {
     return;
   }
+
 
   try {
 
@@ -2512,16 +2866,17 @@ async function loadVersions() {
         )
         .limit(50);
 
+
     if (error) {
       throw error;
     }
 
+
     state.versions =
       data || [];
 
-    if (
-      !state.versions.length
-    ) {
+
+    if (!state.versions.length) {
 
       root.innerHTML = `
         <div class="empty-state">
@@ -2532,21 +2887,21 @@ async function loadVersions() {
       return;
     }
 
+
     root.innerHTML =
       state.versions
         .map(
           (version) => {
 
             const required =
-              version.is_mandatory ===
-              true;
+              version.is_mandatory === true;
+
 
             const active =
-              version.is_active !==
-              false;
+              version.is_active !== false;
+
 
             return `
-
               <article class="version-card">
 
                 <div class="version-main">
@@ -2578,7 +2933,6 @@ async function loadVersions() {
 
                 </div>
 
-
                 <div class="version-meta">
 
                   <span>
@@ -2593,13 +2947,11 @@ async function loadVersions() {
                       ? "danger"
                       : ""
                   }">
-
                     ${
                       required
                         ? "OBLIGATORIA"
                         : "NORMAL"
                     }
-
                   </span>
 
                   <span class="${
@@ -2607,13 +2959,11 @@ async function loadVersions() {
                       ? "success"
                       : ""
                   }">
-
                     ${
                       active
                         ? "ACTIVA"
                         : "INACTIVA"
                     }
-
                   </span>
 
                   <button
@@ -2634,25 +2984,24 @@ async function loadVersions() {
         )
         .join("");
 
-    qsa(
-      ".edit-version"
-    )
-      .forEach(
-        (button) => {
 
-          button.addEventListener(
-            "click",
-            () => {
+    qsa(".edit-version").forEach(
+      (button) => {
 
-              openVersion(
-                button.dataset.id
-              );
+        button.addEventListener(
+          "click",
+          () => {
 
-            }
-          );
+            openVersion(
+              button.dataset.id
+            );
 
-        }
-      );
+          }
+        );
+
+      }
+    );
+
 
   } catch (error) {
 
@@ -2661,12 +3010,45 @@ async function loadVersions() {
       error
     );
 
+
     root.innerHTML = `
       <div class="empty-state">
         No se pudieron cargar las versiones.
       </div>
     `;
+
   }
+}
+
+
+async function requireAdminSession() {
+  const {
+    data: {
+      user
+    } = {}
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error(
+      "ADMIN_SESSION_REQUIRED"
+    );
+  }
+
+  const admin =
+    await isCurrentUserAdmin(
+      user.id
+    );
+
+  if (!admin) {
+    throw new Error(
+      "ADMIN_ACCESS_DENIED"
+    );
+  }
+
+  state.currentAdminId =
+    user.id;
+
+  return user;
 }
 
 
@@ -2680,90 +3062,76 @@ const versionModal =
 
 function resetVersionForm() {
 
-  $("version-form")
-    ?.reset();
+  $("version-form")?.reset();
+
 
   if ($("v-active")) {
-
-    $("v-active")
-      .checked = true;
-
+    $("v-active").checked = true;
   }
+
 
   if ($("v-required")) {
-
-    $("v-required")
-      .checked = false;
-
+    $("v-required").checked = false;
   }
 
+
   if ($("version-status")) {
-
-    $("version-status")
-      .textContent = "";
-
+    $("version-status").textContent = "";
   }
 }
 
 
 function closeVersionModal() {
 
-  versionModal
-    ?.classList.add(
-      "hidden"
-    );
+  versionModal?.classList.add(
+    "hidden"
+  );
 
-  state.editingVersion =
-    null;
+
+  state.editingVersion = null;
+
 
   resetVersionForm();
 }
 
 
-qsa(
-  "[data-close-version]"
-)
-  .forEach(
-    (element) => {
+qsa("[data-close-version]").forEach(
+  (element) => {
 
-      element.addEventListener(
-        "click",
-        closeVersionModal
-      );
+    element.addEventListener(
+      "click",
+      closeVersionModal
+    );
 
-    }
-  );
+  }
+);
 
 
-$("new-version")
-  ?.addEventListener(
-    "click",
-    () => {
-
-      openVersion();
-
-    }
-  );
+$("new-version")?.addEventListener(
+  "click",
+  () => {
+    openVersion();
+  }
+);
 
 
-function openVersion(
-  id = null
-) {
+function openVersion(id = null) {
 
-  state.editingVersion =
-    id;
+  state.editingVersion = id;
+
 
   resetVersionForm();
 
+
   if ($("version-modal-title")) {
 
-    $("version-modal-title")
-      .textContent =
-        id
-          ? "Editar versión"
-          : "Nueva versión";
+    $("version-modal-title").textContent =
+      id
+        ? "Editar versión"
+        : "Nueva versión";
 
   }
+
 
   if (id) {
 
@@ -2773,6 +3141,7 @@ function openVersion(
           String(item.id) ===
           String(id)
       );
+
 
     if (!version) {
 
@@ -2784,39 +3153,40 @@ function openVersion(
       return;
     }
 
+
     $("v-name").value =
-      version.version_name ||
-      "";
+      version.version_name || "";
+
 
     $("v-code").value =
-      version.version_code ??
-      "";
+      version.version_code ?? "";
+
 
     $("v-min").value =
-      version.min_version_code ??
-      "";
+      version.min_version_code ?? "";
+
 
     $("v-url").value =
-      version.download_url ||
-      "";
+      version.download_url || "";
+
 
     $("v-changelog").value =
-      version.changelog ||
-      "";
+      version.changelog || "";
+
 
     $("v-required").checked =
-      version.is_mandatory ===
-      true;
+      version.is_mandatory === true;
+
 
     $("v-active").checked =
-      version.is_active !==
-      false;
+      version.is_active !== false;
+
   }
 
-  versionModal
-    ?.classList.remove(
-      "hidden"
-    );
+
+  versionModal?.classList.remove(
+    "hidden"
+  );
 }
 
 
@@ -2824,208 +3194,1499 @@ function openVersion(
 // VERSION SAVE
 // ============================================================
 
-$("version-form")
-  ?.addEventListener(
-    "submit",
-    async (event) => {
+$("version-form")?.addEventListener(
+  "submit",
+  async (event) => {
 
-      event.preventDefault();
+    event.preventDefault();
 
-      const status =
-        $("version-status");
 
-      const {
-        data: {
-          user
-        }
-      } =
-        await supabase.auth
-          .getUser();
+    const status =
+      $("version-status");
 
-      if (!user) {
-
-        if (status) {
-
-          status.textContent =
-            "La sesión administrativa expiró.";
-
-        }
-
-        return;
-      }
-
-      const versionName =
-        $("v-name")
-          ?.value
-          .trim();
-
-      const versionCode =
-        Number(
-          $("v-code")
-            ?.value
-        );
-
-      const minVersionCode =
-        Number(
-          $("v-min")
-            ?.value
-        );
-
-      const downloadUrl =
-        $("v-url")
-          ?.value
-          .trim();
-
-      const changelog =
-        $("v-changelog")
-          ?.value
-          .trim();
-
-      const isMandatory =
-        $("v-required")
-          ?.checked === true;
-
-      const isActive =
-        $("v-active")
-          ?.checked !== false;
-
-      if (
-        !versionName ||
-        !Number.isFinite(
-          versionCode
-        ) ||
-        !Number.isFinite(
-          minVersionCode
-        ) ||
-        !downloadUrl
-      ) {
-
-        if (status) {
-
-          status.textContent =
-            "Completa todos los campos obligatorios.";
-
-        }
-
-        toast(
-          "Faltan datos de la versión.",
-          "error"
-        );
-
-        return;
-      }
+    try {
+      await requireAdminSession();
+    } catch (error) {
+      console.error(
+        "VERSION ADMIN CHECK ERROR:",
+        error
+      );
 
       if (status) {
-
         status.textContent =
-          "Guardando versión…";
+          "La sesión administrativa expiró o no tiene permisos.";
+      }
+
+      toast(
+        "Sesión administrativa no válida.",
+        "error"
+      );
+
+      return;
+    }
+
+
+    const versionName =
+      $("v-name")
+        ?.value
+        .trim();
+
+
+    const versionCode =
+      Number(
+        $("v-code")?.value
+      );
+
+
+    const minVersionRaw =
+      $("v-min")?.value.trim();
+
+    const minVersionCode =
+      minVersionRaw === ""
+        ? 0
+        : Number(minVersionRaw);
+
+
+    const downloadUrl =
+      $("v-url")
+        ?.value
+        .trim();
+
+
+    const changelog =
+      $("v-changelog")
+        ?.value
+        .trim();
+
+
+    const isMandatory =
+      $("v-required")
+        ?.checked === true;
+
+
+    const isActive =
+      $("v-active")
+        ?.checked !== false;
+
+
+    let validDownloadUrl = false;
+
+    try {
+      const parsedUrl =
+        new URL(downloadUrl);
+
+      validDownloadUrl =
+        parsedUrl.protocol === "https:" ||
+        parsedUrl.protocol === "http:";
+    } catch {
+      validDownloadUrl = false;
+    }
+
+    if (
+      !versionName ||
+      !Number.isFinite(versionCode) ||
+      !Number.isFinite(minVersionCode) ||
+      minVersionCode < 0 ||
+      versionCode < 0 ||
+      !downloadUrl ||
+      !validDownloadUrl
+    ) {
+
+      if (status) {
+        status.textContent =
+          "Completa todos los campos obligatorios.";
+      }
+
+
+      toast(
+        "Faltan datos de la versión.",
+        "error"
+      );
+
+
+      return;
+    }
+
+
+    if (status) {
+      status.textContent =
+        "Guardando versión…";
+    }
+
+
+    const payload = {
+
+      version_name:
+        versionName,
+
+      version_code:
+        versionCode,
+
+      min_version_code:
+        minVersionCode,
+
+      download_url:
+        downloadUrl,
+
+      changelog:
+        changelog || null,
+
+      platform:
+        "android",
+
+      is_active:
+        isActive,
+
+      is_mandatory:
+        isMandatory
+
+    };
+
+
+    try {
+
+      if (state.editingVersion) {
+
+        const {
+          error
+        } =
+          await supabase
+            .from("app_versions")
+            .update(payload)
+            .eq(
+              "id",
+              state.editingVersion
+            );
+
+
+        if (error) {
+          throw error;
+        }
+
+      } else {
+
+        const {
+          error
+        } =
+          await supabase
+            .from("app_versions")
+            .insert(
+              payload
+            );
+
+
+        if (error) {
+          throw error;
+        }
 
       }
 
-      const payload = {
 
-        version_name:
-          versionName,
-
-        version_code:
-          versionCode,
-
-        min_version_code:
-          minVersionCode,
-
-        download_url:
-          downloadUrl,
-
-        changelog:
-          changelog || null,
-
-        platform:
-          "android",
-
-        is_active:
-          isActive,
-
-        is_mandatory:
-          isMandatory
-
-      };
-
-      try {
-
-        if (
+      const wasEditing =
+        Boolean(
           state.editingVersion
-        ) {
+        );
 
-          const {
-            error
-          } =
-            await supabase
-              .from("app_versions")
-              .update(payload)
-              .eq(
-                "id",
-                state.editingVersion
-              );
 
-          if (error) {
-            throw error;
+      closeVersionModal();
+
+
+      await loadVersions();
+      await loadOverview();
+
+
+      toast(
+        wasEditing
+          ? "Versión actualizada."
+          : "Versión publicada.",
+        "success"
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "VERSION SAVE ERROR:",
+        error
+      );
+
+
+      if (status) {
+        status.textContent =
+          "No se pudo guardar. Revisa las políticas RLS.";
+      }
+
+
+      toast(
+        "Error al guardar la versión.",
+        "error"
+      );
+
+    }
+
+  }
+);
+
+
+// ============================================================
+// REMOTE ANNOUNCEMENTS UI
+// ============================================================
+
+function ensureAnnouncementUI() {
+  if (state.announcementUIReady) {
+    return;
+  }
+
+  const nav =
+    document.querySelector(
+      ".main-nav"
+    );
+
+
+  const content =
+    document.querySelector(
+      ".content"
+    );
+
+
+  if (!nav || !content) {
+    return;
+  }
+
+
+  if (
+    !nav.querySelector(
+      '[data-view="announcements"]'
+    )
+  ) {
+
+    const button =
+      document.createElement(
+        "button"
+      );
+
+
+    button.className =
+      "nav-item";
+
+
+    button.dataset.view =
+      "announcements";
+
+
+    button.type =
+      "button";
+
+
+    button.innerHTML =
+      `<span>!</span> Avisos`;
+
+
+    button.addEventListener(
+      "click",
+      () =>
+        view(
+          "announcements"
+        )
+    );
+
+
+    nav.appendChild(
+      button
+    );
+
+  }
+
+
+  if (!$("view-announcements")) {
+
+    const section =
+      document.createElement(
+        "div"
+      );
+
+
+    section.className =
+      "view";
+
+
+    section.id =
+      "view-announcements";
+
+
+    section.innerHTML = `
+
+      <div class="welcome-row">
+
+        <div>
+
+          <p class="eyebrow">
+            REMOTE CONTROL
+          </p>
+
+          <h1>
+            Avisos
+          </h1>
+
+          <p class="muted">
+            Mensajes remotos que DashCore puede consultar cuando tenga conexión.
+          </p>
+
+        </div>
+
+        <button
+          class="primary-btn compact"
+          id="new-announcement"
+          type="button"
+        >
+          + Nuevo aviso
+        </button>
+
+      </div>
+
+
+      <div
+        id="announcement-active"
+        class="announcement-active"
+      ></div>
+
+
+      <div
+        id="announcements-list"
+        class="announcements-list"
+      ></div>
+
+    `;
+
+
+    content.appendChild(
+      section
+    );
+
+  }
+
+
+  if (!$("announcement-modal")) {
+
+    const modal =
+      document.createElement(
+        "div"
+      );
+
+
+    modal.className =
+      "modal hidden";
+
+
+    modal.id =
+      "announcement-modal";
+
+
+    modal.innerHTML = `
+
+      <div
+        class="modal-backdrop"
+        data-close-announcement
+      ></div>
+
+
+      <div
+        class="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="announcement-modal-title"
+      >
+
+        <button
+          class="modal-close"
+          data-close-announcement
+          type="button"
+          aria-label="Cerrar"
+        >
+          ×
+        </button>
+
+
+        <p class="eyebrow">
+          REMOTE CONTROL
+        </p>
+
+
+        <h2 id="announcement-modal-title">
+          Nuevo aviso
+        </h2>
+
+
+        <form id="announcement-form">
+
+          <label for="a-title">
+            Título
+          </label>
+
+
+          <input
+            id="a-title"
+            required
+            maxlength="120"
+            placeholder="Mantenimiento programado"
+          >
+
+
+          <label for="a-message">
+            Mensaje
+          </label>
+
+
+          <textarea
+            id="a-message"
+            required
+            maxlength="2000"
+            rows="6"
+            placeholder="Escribe el aviso que verá DashCore..."
+          ></textarea>
+
+
+          <div class="form-grid">
+
+            <div>
+
+              <label for="a-expires">
+                Expira
+              </label>
+
+
+              <input
+                id="a-expires"
+                type="datetime-local"
+              >
+
+            </div>
+
+
+            <div>
+
+              <label
+                class="toggle-row"
+                style="margin-top:28px"
+              >
+
+                <input
+                  id="a-active"
+                  type="checkbox"
+                  checked
+                >
+
+                <span class="toggle"></span>
+
+                Aviso activo
+
+              </label>
+
+            </div>
+
+          </div>
+
+
+          <div
+            class="form-status"
+            id="announcement-status"
+          ></div>
+
+
+          <button
+            class="primary-btn"
+            type="submit"
+          >
+            Guardar aviso
+          </button>
+
+        </form>
+
+      </div>
+
+    `;
+
+
+    document.body.appendChild(
+      modal
+    );
+
+  }
+
+
+  $("new-announcement")?.addEventListener(
+    "click",
+    () =>
+      openAnnouncement()
+  );
+
+
+  qsa(
+    "[data-close-announcement]"
+  ).forEach((el) => {
+
+    el.addEventListener(
+      "click",
+      closeAnnouncement
+    );
+
+  });
+
+
+  $("announcement-form")?.addEventListener(
+    "submit",
+    saveAnnouncement
+  );
+
+  state.announcementUIReady = true;
+}
+
+
+// ============================================================
+// ANNOUNCEMENT OPEN
+// ============================================================
+
+function openAnnouncement(id = null) {
+
+  ensureAnnouncementUI();
+
+
+  state.editingAnnouncement =
+    id;
+
+
+  const item =
+    state.announcements.find(
+      (x) =>
+        String(x.id) ===
+        String(id)
+    );
+
+
+  $("announcement-modal-title")
+    .textContent =
+      item
+        ? "Editar aviso"
+        : "Nuevo aviso";
+
+
+  $("announcement-form")?.reset();
+
+
+  $("a-active").checked =
+    item
+      ? item.is_active !== false
+      : true;
+
+
+  $("a-title").value =
+    item?.title || "";
+
+
+  $("a-message").value =
+    item?.message || "";
+
+
+  if (item?.expires_at) {
+
+    const d =
+      new Date(
+        item.expires_at
+      );
+
+
+    if (!Number.isNaN(d.getTime())) {
+
+      $("a-expires").value =
+        new Date(
+          d.getTime() -
+          d.getTimezoneOffset() *
+            60000
+        )
+          .toISOString()
+          .slice(0, 16);
+
+    }
+
+  }
+
+
+  $("announcement-status")
+    .textContent = "";
+
+
+  $("announcement-modal")
+    ?.classList.remove(
+      "hidden"
+    );
+}
+
+
+function closeAnnouncement() {
+
+  $("announcement-modal")
+    ?.classList.add(
+      "hidden"
+    );
+
+
+  state.editingAnnouncement =
+    null;
+}
+
+
+// ============================================================
+// LOAD ANNOUNCEMENTS
+// ============================================================
+
+async function loadAnnouncements() {
+
+  ensureAnnouncementUI();
+
+
+  const root =
+    $("announcements-list");
+
+
+  if (!root) {
+    return;
+  }
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabase
+        .from("remote_announcements")
+        .select("*")
+        .order(
+          "published_at",
+          {
+            ascending: false
           }
+        )
+        .limit(50);
 
-        } else {
 
-          const {
-            error
-          } =
-            await supabase
-              .from("app_versions")
-              .insert(
-                payload
-              );
+    if (error) {
+      throw error;
+    }
 
-          if (error) {
-            throw error;
-          }
-        }
 
-        const wasEditing =
-          Boolean(
-            state.editingVersion
+    state.announcements =
+      data || [];
+
+
+    renderAnnouncements();
+
+
+  } catch (error) {
+
+    console.error(
+      "ANNOUNCEMENTS ERROR:",
+      error
+    );
+
+
+    root.innerHTML = `
+      <div class="empty-state">
+        No se pudieron cargar los avisos.
+        Revisa RLS y la tabla remote_announcements.
+      </div>
+    `;
+
+  }
+}
+
+
+// ============================================================
+// ANNOUNCEMENT STATUS
+// ============================================================
+
+function isAnnouncementCurrentlyActive(item) {
+
+  if (
+    !item ||
+    item.is_active === false
+  ) {
+    return false;
+  }
+
+
+  if (!item.expires_at) {
+    return true;
+  }
+
+
+  const expiry =
+    new Date(
+      item.expires_at
+    ).getTime();
+
+
+  return (
+    !Number.isNaN(expiry) &&
+    expiry > Date.now()
+  );
+}
+
+
+// ============================================================
+// RENDER ANNOUNCEMENTS
+// ============================================================
+
+function renderAnnouncements() {
+
+  const activeRoot =
+    $("announcement-active");
+
+
+  const root =
+    $("announcements-list");
+
+
+  if (!root) {
+    return;
+  }
+
+
+  const active =
+    state.announcements.find(
+      isAnnouncementCurrentlyActive
+    );
+
+
+  if (activeRoot) {
+
+    activeRoot.innerHTML =
+      active
+        ? `
+
+          <article class="announcement-active-card">
+
+            <div>
+
+              <span class="announcement-badge">
+                ACTIVO
+              </span>
+
+              <h3>
+                ${esc(
+                  active.title
+                )}
+              </h3>
+
+              <p>
+                ${esc(
+                  active.message
+                )}
+              </p>
+
+            </div>
+
+
+            <button
+              class="ghost-btn"
+              data-edit-announcement="${esc(
+                active.id
+              )}"
+              type="button"
+            >
+              Editar
+            </button>
+
+          </article>
+
+        `
+        : `
+
+          <div class="announcement-empty">
+            No hay ningún aviso activo.
+          </div>
+
+        `;
+
+  }
+
+
+  if (!state.announcements.length) {
+
+    root.innerHTML = `
+      <div class="empty-state">
+        No hay avisos creados.
+      </div>
+    `;
+
+    return;
+  }
+
+
+  root.innerHTML =
+    state.announcements
+      .map((item) => {
+
+        const activeNow =
+          isAnnouncementCurrentlyActive(
+            item
           );
 
-        closeVersionModal();
 
-        await loadVersions();
+        const expired =
+          item.expires_at &&
+          new Date(
+            item.expires_at
+          ).getTime() <=
+            Date.now();
 
-        await loadOverview();
 
-        toast(
-          wasEditing
-            ? "Versión actualizada."
-            : "Versión publicada.",
-          "success"
-        );
+        return `
 
-      } catch (error) {
+          <article class="announcement-card">
 
-        console.error(
-          "VERSION SAVE ERROR:",
-          error
-        );
+            <div class="announcement-card-main">
 
-        if (status) {
+              <div class="announcement-card-top">
 
-          status.textContent =
-            "No se pudo guardar. Revisa las políticas RLS.";
+                <strong>
+                  ${esc(
+                    item.title ||
+                    "Sin título"
+                  )}
+                </strong>
 
-        }
 
-        toast(
-          "Error al guardar la versión.",
-          "error"
-        );
-      }
+                <span
+                  class="announcement-status ${
+                    activeNow
+                      ? "success"
+                      : expired
+                        ? "expired"
+                        : ""
+                  }"
+                >
+                  ${
+                    activeNow
+                      ? "ACTIVO"
+                      : expired
+                        ? "EXPIRADO"
+                        : "INACTIVO"
+                  }
+                </span>
+
+              </div>
+
+
+              <p>
+                ${esc(
+                  item.message ||
+                  ""
+                )}
+              </p>
+
+
+              <small>
+
+                Publicado:
+                ${esc(
+                  fmt(
+                    item.published_at
+                  )
+                )}
+
+                ${
+                  item.expires_at
+                    ? ` · Expira: ${esc(
+                        fmt(
+                          item.expires_at
+                        )
+                      )}`
+                    : ""
+                }
+
+              </small>
+
+            </div>
+
+
+            <div class="announcement-actions">
+
+              <button
+                class="ghost-btn edit-announcement"
+                data-id="${esc(
+                  item.id
+                )}"
+                type="button"
+              >
+                Editar
+              </button>
+
+
+              <button
+                class="ghost-btn toggle-announcement"
+                data-id="${esc(
+                  item.id
+                )}"
+                type="button"
+              >
+                ${
+                  item.is_active === false
+                    ? "Activar"
+                    : "Desactivar"
+                }
+              </button>
+
+
+              <button
+                class="danger-btn delete-announcement"
+                data-id="${esc(
+                  item.id
+                )}"
+                type="button"
+              >
+                Eliminar
+              </button>
+
+            </div>
+
+          </article>
+
+        `;
+
+      })
+      .join("");
+
+
+  qsa(".edit-announcement").forEach(
+    (b) => {
+
+      b.addEventListener(
+        "click",
+        () =>
+          openAnnouncement(
+            b.dataset.id
+          )
+      );
+
     }
   );
+
+
+  qsa("[data-edit-announcement]").forEach(
+    (b) => {
+
+      b.addEventListener(
+        "click",
+        () =>
+          openAnnouncement(
+            b.dataset.editAnnouncement
+          )
+      );
+
+    }
+  );
+
+
+  qsa(".toggle-announcement").forEach(
+    (b) => {
+
+      b.addEventListener(
+        "click",
+        () =>
+          toggleAnnouncement(
+            b.dataset.id
+          )
+      );
+
+    }
+  );
+
+
+  qsa(".delete-announcement").forEach(
+    (b) => {
+
+      b.addEventListener(
+        "click",
+        () =>
+          deleteAnnouncement(
+            b.dataset.id
+          )
+      );
+
+    }
+  );
+
+}
+
+
+// ============================================================
+// SAVE ANNOUNCEMENT
+// ============================================================
+
+async function saveAnnouncement(event) {
+
+  event.preventDefault();
+
+
+  const status =
+    $("announcement-status");
+
+
+  const title =
+    $("a-title")
+      ?.value
+      .trim();
+
+
+  const message =
+    $("a-message")
+      ?.value
+      .trim();
+
+
+  const expiresRaw =
+    $("a-expires")?.value;
+
+
+  const isActive =
+    $("a-active")
+      ?.checked !== false;
+
+
+  if (!title || !message) {
+
+    if (status) {
+      status.textContent =
+        "Completa título y mensaje.";
+    }
+
+    return;
+  }
+
+
+  if (status) {
+    status.textContent =
+      "Guardando aviso…";
+  }
+
+
+  const payload = {
+
+    title,
+
+    message,
+
+    is_active:
+      isActive,
+
+    expires_at:
+      expiresRaw
+        ? new Date(
+            expiresRaw
+          ).toISOString()
+        : null,
+
+    metadata: {
+      source: "admin"
+    }
+
+  };
+
+  if (!state.editingAnnouncement) {
+    payload.published_at =
+      new Date().toISOString();
+  }
+
+
+  try {
+
+    const wasEditing =
+      Boolean(
+        state.editingAnnouncement
+      );
+
+
+    let error;
+
+
+    if (state.editingAnnouncement) {
+
+      ({
+        error
+      } =
+        await supabase
+          .from(
+            "remote_announcements"
+          )
+          .update(
+            payload
+          )
+          .eq(
+            "id",
+            state.editingAnnouncement
+          ));
+
+    } else {
+
+      ({
+        error
+      } =
+        await supabase
+          .from(
+            "remote_announcements"
+          )
+          .insert(
+            payload
+          ));
+
+    }
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    closeAnnouncement();
+
+
+    await loadAnnouncements();
+    await loadOverview();
+
+
+    toast(
+      wasEditing
+        ? "Aviso actualizado."
+        : "Aviso publicado.",
+      "success"
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "ANNOUNCEMENT SAVE ERROR:",
+      error
+    );
+
+
+    if (status) {
+      status.textContent =
+        "No se pudo guardar. Revisa RLS y permisos de admin.";
+    }
+
+
+    toast(
+      "No se pudo guardar el aviso.",
+      "error"
+    );
+
+  }
+}
+
+
+// ============================================================
+// TOGGLE ANNOUNCEMENT
+// ============================================================
+
+async function toggleAnnouncement(id) {
+
+  try {
+    await requireAdminSession();
+  } catch (error) {
+    console.error(
+      "ANNOUNCEMENT TOGGLE ADMIN CHECK ERROR:",
+      error
+    );
+
+    toast(
+      "Sesión administrativa no válida.",
+      "error"
+    );
+
+    return;
+  }
+
+  const item =
+    state.announcements.find(
+      (x) =>
+        String(x.id) ===
+        String(id)
+    );
+
+
+  if (!item) {
+    return;
+  }
+
+
+  const {
+    error
+  } =
+    await supabase
+      .from("remote_announcements")
+      .update({
+        is_active:
+          item.is_active === false
+      })
+      .eq(
+        "id",
+        id
+      );
+
+
+  if (error) {
+
+    console.error(
+      "ANNOUNCEMENT TOGGLE ERROR:",
+      error
+    );
+
+
+    toast(
+      "No se pudo cambiar el estado.",
+      "error"
+    );
+
+
+    return;
+  }
+
+
+  await loadAnnouncements();
+  await loadOverview();
+
+
+  toast(
+    item.is_active === false
+      ? "Aviso activado."
+      : "Aviso desactivado.",
+    "success"
+  );
+}
+
+
+// ============================================================
+// DELETE ANNOUNCEMENT
+// ============================================================
+
+async function deleteAnnouncement(id) {
+
+  try {
+    await requireAdminSession();
+  } catch (error) {
+    console.error(
+      "ANNOUNCEMENT DELETE ADMIN CHECK ERROR:",
+      error
+    );
+
+    toast(
+      "Sesión administrativa no válida.",
+      "error"
+    );
+
+    return;
+  }
+
+  if (
+    !window.confirm(
+      "¿Eliminar este aviso?"
+    )
+  ) {
+    return;
+  }
+
+
+  const {
+    error
+  } =
+    await supabase
+      .from(
+        "remote_announcements"
+      )
+      .delete()
+      .eq(
+        "id",
+        id
+      );
+
+
+  if (error) {
+
+    console.error(
+      "ANNOUNCEMENT DELETE ERROR:",
+      error
+    );
+
+
+    toast(
+      "No se pudo eliminar el aviso.",
+      "error"
+    );
+
+
+    return;
+  }
+
+
+  await loadAnnouncements();
+  await loadOverview();
+
+
+  toast(
+    "Aviso eliminado.",
+    "success"
+  );
+}
+
+
+// ============================================================
+// REALTIME ANNOUNCEMENTS
+// ============================================================
+
+function startAnnouncementRealtime() {
+
+  if (state.announcementChannel) {
+    return;
+  }
+
+
+  state.announcementChannel =
+    supabase
+      .channel(
+        "admin:remote_announcements"
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table:
+            "remote_announcements"
+        },
+        () => {
+
+          loadAnnouncements();
+          loadOverview();
+
+        }
+      )
+      .subscribe(
+        (status) => {
+
+          if (
+            status ===
+            "SUBSCRIBED"
+          ) {
+            setConnectionState(
+              true,
+              "Supabase conectado"
+            );
+            return;
+          }
+
+          if (
+            status ===
+              "CHANNEL_ERROR" ||
+            status ===
+              "TIMED_OUT"
+          ) {
+            setConnectionState(
+              false,
+              "Realtime no disponible"
+            );
+          }
+
+        }
+      );
+}
+
+
+async function stopAnnouncementRealtime() {
+
+  if (
+    !state.announcementChannel
+  ) {
+    return;
+  }
+
+
+  await supabase.removeChannel(
+    state.announcementChannel
+  );
+
+
+  state.announcementChannel =
+    null;
+}
+
+
+// ============================================================
+// CONNECTION STATE
+// ============================================================
+
+function setConnectionState(
+  online,
+  label = "Supabase"
+) {
+
+  const pill =
+    document.querySelector(
+      ".connection-pill"
+    );
+
+
+  if (!pill) {
+    return;
+  }
+
+
+  pill.classList.toggle(
+    "offline",
+    !online
+  );
+
+
+  pill.innerHTML =
+    `<span></span>${esc(label)}`;
+}
+
+
+window.addEventListener(
+  "online",
+  () =>
+    setConnectionState(
+      true,
+      "Supabase conectado"
+    )
+);
+
+
+window.addEventListener(
+  "offline",
+  () =>
+    setConnectionState(
+      false,
+      "Sin conexión"
+    )
+);
+
+
+// ============================================================
+// INITIALIZATION
+// ============================================================
+
+ensureAnnouncementUI();
+
+
+setConnectionState(
+  navigator.onLine,
+  navigator.onLine
+    ? "Supabase conectado"
+    : "Sin conexión"
+);
 
 
 // ============================================================
@@ -3036,24 +4697,37 @@ document.addEventListener(
   "keydown",
   (event) => {
 
+    if (event.key !== "Escape") {
+      return;
+    }
+
+
+    closeMobileMenu();
+
+
     if (
-      event.key ===
-      "Escape"
+      !versionModal
+        ?.classList.contains(
+          "hidden"
+        )
     ) {
 
-      closeMobileMenu();
+      closeVersionModal();
 
-      if (
-        !versionModal
-          ?.classList.contains(
-            "hidden"
-          )
-      ) {
-
-        closeVersionModal();
-
-      }
     }
+
+
+    if (
+      !$("announcement-modal")
+        ?.classList.contains(
+          "hidden"
+        )
+    ) {
+
+      closeAnnouncement();
+
+    }
+
   }
 );
 
@@ -3062,9 +4736,7 @@ document.addEventListener(
 // INITIAL VIEW
 // ============================================================
 
-view(
-  "overview"
-);
+view("overview");
 
 
 // ============================================================
@@ -3096,3 +4768,11 @@ window.addEventListener(
 
   }
 );
+
+
+// ============================================================
+// DEBUG
+// ============================================================
+
+// El cliente Supabase permanece encapsulado en este módulo.
+
