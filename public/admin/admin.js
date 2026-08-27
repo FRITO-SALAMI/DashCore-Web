@@ -27,13 +27,9 @@ const supabase = createClient(
 // HELPERS
 // ============================================================
 
-const $ = (id) =>
-  document.getElementById(id);
+const $ = (id) => document.getElementById(id);
 
-const qsa = (
-  selector,
-  root = document
-) =>
+const qsa = (selector, root = document) =>
   [...root.querySelectorAll(selector)];
 
 const esc = (value) =>
@@ -45,7 +41,6 @@ const esc = (value) =>
     .replaceAll("'", "&#039;");
 
 const num = (value) => {
-
   if (
     value === null ||
     value === undefined ||
@@ -54,52 +49,38 @@ const num = (value) => {
     return "—";
   }
 
-  return new Intl.NumberFormat(
-    "es-DO"
-  ).format(
+  return new Intl.NumberFormat("es-DO").format(
     Number(value) || 0
   );
 };
 
 const fmt = (value) => {
-
   if (!value) {
     return "—";
   }
 
   try {
-
     const date =
       value?.toDate
         ? value.toDate()
         : new Date(value);
 
-    if (
-      Number.isNaN(
-        date.getTime()
-      )
-    ) {
+    if (Number.isNaN(date.getTime())) {
       return "—";
     }
 
-    return new Intl.DateTimeFormat(
-      "es-DO",
-      {
-        dateStyle: "medium",
-        timeStyle: "short"
-      }
-    ).format(date);
+    return new Intl.DateTimeFormat("es-DO", {
+      dateStyle: "medium",
+      timeStyle: "short"
+    }).format(date);
 
   } catch {
-
     return "—";
   }
 };
 
 const safeArray = (value) =>
-  Array.isArray(value)
-    ? value
-    : [];
+  Array.isArray(value) ? value : [];
 
 
 // ============================================================
@@ -107,37 +88,21 @@ const safeArray = (value) =>
 // ============================================================
 
 const state = {
-
   users: [],
-
   userPage: 1,
-
   usersPageSize: 40,
-
   currentUserCursor: null,
-
   userCursors: [],
-
   versions: [],
-
   announcements: [],
-
   editingAnnouncement: null,
-
   styles: [],
-
   map: null,
-
   markers: [],
-
   editingVersion: null,
-
   initialized: false,
-
   loading: false,
-
   announcementChannel: null
-
 };
 
 
@@ -145,41 +110,26 @@ const state = {
 // TOAST
 // ============================================================
 
-function toast(
-  message,
-  type = "info"
-) {
-
-  const root =
-    $("toast-root");
+function toast(message, type = "info") {
+  const root = $("toast-root");
 
   if (!root) {
     return;
   }
 
-  const element =
-    document.createElement("div");
+  const element = document.createElement("div");
 
-  element.className =
-    `toast ${type}`;
-
-  element.textContent =
-    message;
+  element.className = `toast ${type}`;
+  element.textContent = message;
 
   root.appendChild(element);
 
   setTimeout(() => {
-
-    element.classList.add(
-      "hide"
-    );
+    element.classList.add("hide");
 
     setTimeout(() => {
-
       element.remove();
-
     }, 250);
-
   }, 2800);
 }
 
@@ -189,95 +139,45 @@ function toast(
 // ============================================================
 
 const VIEW_META = {
-
-  overview: [
-    "CONTROL CENTER",
-    "Resumen"
-  ],
-
-  users: [
-    "COMMUNITY",
-    "Usuarios"
-  ],
-
-  "user-detail": [
-    "COMMUNITY / PROFILE",
-    "Perfil"
-  ],
-
-  styles: [
-    "DESIGN SYSTEM",
-    "Estilos"
-  ],
-
-  locations: [
-    "GEO INTELLIGENCE",
-    "Ubicaciones"
-  ],
-
-  versions: [
-    "RELEASE CONTROL",
-    "Versiones"
-  ],
-
-  announcements: [
-    "REMOTE CONTROL",
-    "Avisos"
-  ]
-
+  overview: ["CONTROL CENTER", "Resumen"],
+  users: ["COMMUNITY", "Usuarios"],
+  "user-detail": ["COMMUNITY / PROFILE", "Perfil"],
+  styles: ["DESIGN SYSTEM", "Estilos"],
+  locations: ["GEO INTELLIGENCE", "Ubicaciones"],
+  versions: ["RELEASE CONTROL", "Versiones"],
+  announcements: ["REMOTE CONTROL", "Avisos"]
 };
 
-
 function view(name) {
-
-  const target =
-    $(`view-${name}`);
+  const target = $(`view-${name}`);
 
   if (!target) {
     return;
   }
 
-  qsa(".view")
-    .forEach((element) => {
+  qsa(".view").forEach((element) => {
+    element.classList.remove("active");
+  });
 
-      element.classList.remove(
-        "active"
-      );
+  target.classList.add("active");
 
-    });
-
-  target.classList.add(
-    "active"
-  );
-
-  qsa(".nav-item")
-    .forEach((element) => {
-
-      element.classList.toggle(
-        "active",
-        element.dataset.view === name
-      );
-
-    });
+  qsa(".nav-item").forEach((element) => {
+    element.classList.toggle(
+      "active",
+      element.dataset.view === name
+    );
+  });
 
   const meta =
     VIEW_META[name] ||
     VIEW_META.overview;
 
   if ($("view-kicker")) {
-
-    $("view-kicker")
-      .textContent =
-        meta[0];
-
+    $("view-kicker").textContent = meta[0];
   }
 
   if ($("view-title")) {
-
-    $("view-title")
-      .textContent =
-        meta[1];
-
+    $("view-title").textContent = meta[1];
   }
 
   closeMobileMenu();
@@ -295,11 +195,8 @@ function view(name) {
     name === "locations" &&
     state.map
   ) {
-
     setTimeout(() => {
-
       state.map.invalidateSize();
-
     }, 250);
   }
 }
@@ -309,55 +206,23 @@ function view(name) {
 // NAVIGATION
 // ============================================================
 
-qsa(".nav-item")
-  .forEach((button) => {
-
-    button.addEventListener(
-      "click",
-      () => {
-
-        view(
-          button.dataset.view
-        );
-
-      }
-    );
-
+qsa(".nav-item").forEach((button) => {
+  button.addEventListener("click", () => {
+    view(button.dataset.view);
   });
+});
 
-
-qsa(".quick-action")
-  .forEach((button) => {
-
-    button.addEventListener(
-      "click",
-      () => {
-
-        view(
-          button.dataset.view
-        );
-
-      }
-    );
-
+qsa(".quick-action").forEach((button) => {
+  button.addEventListener("click", () => {
+    view(button.dataset.view);
   });
+});
 
-
-qsa(".back-btn")
-  .forEach((button) => {
-
-    button.addEventListener(
-      "click",
-      () => {
-
-        view(
-          button.dataset.view
-        );
-
-      }
-    );
-
+qsa(".back-btn").forEach((button) => {
+  button.addEventListener("click", () => {
+    view(button.dataset.view);
   });
+});
 
 
 // ============================================================
@@ -365,54 +230,36 @@ qsa(".back-btn")
 // ============================================================
 
 function openMobileMenu() {
-
-  $("sidebar")
-    ?.classList.add("open");
-
-  $("mobile-overlay")
-    ?.classList.add("active");
+  $("sidebar")?.classList.add("open");
+  $("mobile-overlay")?.classList.add("active");
 }
-
 
 function closeMobileMenu() {
-
-  $("sidebar")
-    ?.classList.remove("open");
-
-  $("mobile-overlay")
-    ?.classList.remove("active");
+  $("sidebar")?.classList.remove("open");
+  $("mobile-overlay")?.classList.remove("active");
 }
 
+$("mobile-menu")?.addEventListener(
+  "click",
+  openMobileMenu
+);
 
-$("mobile-menu")
-  ?.addEventListener(
-    "click",
-    openMobileMenu
-  );
+$("mobile-close")?.addEventListener(
+  "click",
+  closeMobileMenu
+);
 
-
-$("mobile-close")
-  ?.addEventListener(
-    "click",
-    closeMobileMenu
-  );
-
-
-$("mobile-overlay")
-  ?.addEventListener(
-    "click",
-    closeMobileMenu
-  );
+$("mobile-overlay")?.addEventListener(
+  "click",
+  closeMobileMenu
+);
 
 
 // ============================================================
 // ADMIN CHECK
 // ============================================================
 
-async function isCurrentUserAdmin(
-  userId
-) {
-
+async function isCurrentUserAdmin(userId) {
   if (!userId) {
     return false;
   }
@@ -420,18 +267,13 @@ async function isCurrentUserAdmin(
   const {
     data,
     error
-  } =
-    await supabase
-      .from("admin_users")
-      .select("user_id")
-      .eq(
-        "user_id",
-        userId
-      )
-      .maybeSingle();
+  } = await supabase
+    .from("admin_users")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
 
   if (error) {
-
     console.error(
       "ADMIN TABLE ERROR:",
       error
@@ -448,282 +290,215 @@ async function isCurrentUserAdmin(
 // LOGIN
 // ============================================================
 
-$("login-form")
-  ?.addEventListener(
-    "submit",
-    async (event) => {
+$("login-form")?.addEventListener(
+  "submit",
+  async (event) => {
+    event.preventDefault();
 
-      event.preventDefault();
+    const form = event.currentTarget;
 
-      const form =
-        event.currentTarget;
+    const email =
+      $("login-email")
+        ?.value
+        .trim()
+        .toLowerCase();
 
-      const email =
-        $("login-email")
-          ?.value
-          .trim()
-          .toLowerCase();
+    const password =
+      $("login-password")?.value || "";
 
-      const password =
-        $("login-password")
-          ?.value ||
-        "";
+    const status = $("login-status");
 
-      const status =
-        $("login-status");
+    const button =
+      form.querySelector(
+        "button[type='submit']"
+      );
 
-      const button =
-        form.querySelector(
-          "button[type='submit']"
+    if (!email || !password) {
+      if (status) {
+        status.textContent =
+          "Introduce correo y contraseña.";
+      }
+
+      return;
+    }
+
+    if (button) {
+      button.disabled = true;
+    }
+
+    if (status) {
+      status.textContent =
+        "Verificando acceso administrativo…";
+    }
+
+    try {
+      const {
+        data,
+        error
+      } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      const user = data?.user;
+
+      if (!user) {
+        throw new Error(
+          "Supabase no devolvió el usuario."
+        );
+      }
+
+      if (status) {
+        status.textContent =
+          "Validando permisos de administrador…";
+      }
+
+      const admin =
+        await isCurrentUserAdmin(user.id);
+
+      if (!admin) {
+        if (status) {
+          status.textContent =
+            "Esta cuenta no tiene permisos de administrador.";
+        }
+
+        toast(
+          "Acceso administrativo denegado.",
+          "error"
         );
 
-      if (
-        !email ||
-        !password
-      ) {
+        await supabase.auth.signOut();
 
-        if (status) {
-
-          status.textContent =
-            "Introduce correo y contraseña.";
-
+        if (button) {
+          button.disabled = false;
         }
 
         return;
       }
 
+      if (status) {
+        status.textContent =
+          "Acceso administrativo autorizado.";
+      }
+
+      showApp(user);
+
+      startAnnouncementRealtime();
+
+      if (!state.initialized) {
+        state.initialized = true;
+
+        await loadAll();
+
+        toast(
+          "Panel administrativo conectado.",
+          "success"
+        );
+      }
+
       if (button) {
-        button.disabled = true;
+        button.disabled = false;
+      }
+
+    } catch (error) {
+      console.error(
+        "LOGIN / ADMIN ERROR:",
+        error
+      );
+
+      let message =
+        "No fue posible validar el acceso.";
+
+      const code =
+        error?.code ||
+        error?.status;
+
+      const errorMessage =
+        String(
+          error?.message || ""
+        ).toLowerCase();
+
+      if (
+        code === "invalid_credentials" ||
+        code === "invalid_grant"
+      ) {
+        message =
+          "Correo o contraseña incorrectos.";
+
+      } else if (
+        code === "email_not_confirmed"
+      ) {
+        message =
+          "Debes confirmar tu correo.";
+
+      } else if (
+        code === "over_request_rate_limit"
+      ) {
+        message =
+          "Demasiados intentos. Espera unos minutos.";
+
+      } else if (
+        code === "network_error"
+      ) {
+        message =
+          "No hay conexión con Supabase.";
+
+      } else if (
+        errorMessage.includes("admin_users")
+      ) {
+        message =
+          "No se pudo consultar la tabla de administradores. Revisa RLS de admin_users.";
+
+      } else if (
+        errorMessage.includes("permission") ||
+        errorMessage.includes("row-level security") ||
+        errorMessage.includes("rls")
+      ) {
+        message =
+          "Supabase bloqueó la validación del administrador por RLS.";
       }
 
       if (status) {
-
-        status.textContent =
-          "Verificando acceso administrativo…";
-
+        status.textContent = message;
       }
 
-      try {
+      toast(message, "error");
 
-        const {
-          data,
-          error
-        } =
-          await supabase.auth.signInWithPassword({
-            email,
-            password
-          });
-
-        if (error) {
-          throw error;
-        }
-
-        const user =
-          data?.user;
-
-        if (!user) {
-
-          throw new Error(
-            "Supabase no devolvió el usuario."
-          );
-        }
-
-        if (status) {
-
-          status.textContent =
-            "Validando permisos de administrador…";
-
-        }
-
-        const admin =
-          await isCurrentUserAdmin(
-            user.id
-          );
-
-        if (!admin) {
-
-          if (status) {
-
-            status.textContent =
-              "Esta cuenta no tiene permisos de administrador.";
-
-          }
-
-          toast(
-            "Acceso administrativo denegado.",
-            "error"
-          );
-
-          await supabase.auth.signOut();
-
-          if (button) {
-            button.disabled = false;
-          }
-
-          return;
-        }
-
-        if (status) {
-
-          status.textContent =
-            "Acceso administrativo autorizado.";
-
-        }
-
-        showApp(
-          user
-        );
-
-        startAnnouncementRealtime();
-
-        if (
-          !state.initialized
-        ) {
-
-          state.initialized =
-            true;
-
-          await loadAll();
-
-          toast(
-            "Panel administrativo conectado.",
-            "success"
-          );
-        }
-
-        if (button) {
-          button.disabled = false;
-        }
-
-      } catch (error) {
-
-        console.error(
-          "LOGIN / ADMIN ERROR:",
-          error
-        );
-
-        let message =
-          "No fue posible validar el acceso.";
-
-        const code =
-          error?.code ||
-          error?.status;
-
-        const errorMessage =
-          String(
-            error?.message ||
-            ""
-          ).toLowerCase();
-
-        if (
-          code ===
-            "invalid_credentials" ||
-          code ===
-            "invalid_grant"
-        ) {
-
-          message =
-            "Correo o contraseña incorrectos.";
-
-        } else if (
-          code ===
-            "email_not_confirmed"
-        ) {
-
-          message =
-            "Debes confirmar tu correo.";
-
-        } else if (
-          code ===
-            "over_request_rate_limit"
-        ) {
-
-          message =
-            "Demasiados intentos. Espera unos minutos.";
-
-        } else if (
-          code ===
-            "network_error"
-        ) {
-
-          message =
-            "No hay conexión con Supabase.";
-
-        } else if (
-          errorMessage.includes(
-            "admin_users"
-          )
-        ) {
-
-          message =
-            "No se pudo consultar la tabla de administradores. Revisa RLS de admin_users.";
-
-        } else if (
-          errorMessage.includes(
-            "permission"
-          ) ||
-          errorMessage.includes(
-            "row-level security"
-          ) ||
-          errorMessage.includes(
-            "rls"
-          )
-        ) {
-
-          message =
-            "Supabase bloqueó la validación del administrador por RLS.";
-
-        }
-
-        if (status) {
-
-          status.textContent =
-            message;
-
-        }
-
-        toast(
-          message,
-          "error"
-        );
-
-        if (button) {
-          button.disabled = false;
-        }
-
+      if (button) {
+        button.disabled = false;
       }
-
     }
-  );
+  }
+);
 
 
 // ============================================================
 // LOGOUT
 // ============================================================
 
-$("logout-btn")
-  ?.addEventListener(
-    "click",
-    async () => {
+$("logout-btn")?.addEventListener(
+  "click",
+  async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error(
+        "LOGOUT ERROR:",
+        error
+      );
 
-      try {
-
-        await supabase.auth.signOut();
-
-      } catch (error) {
-
-        console.error(
-          "LOGOUT ERROR:",
-          error
-        );
-
-        toast(
-          "No se pudo cerrar sesión.",
-          "error"
-        );
-      }
+      toast(
+        "No se pudo cerrar sesión.",
+        "error"
+      );
     }
-  );
+  }
+);
 
 
 // ============================================================
@@ -731,44 +506,22 @@ $("logout-btn")
 // ============================================================
 
 supabase.auth.onAuthStateChange(
-  async (
-    event,
-    session
-  ) => {
-
-    if (
-      event ===
-      "INITIAL_SESSION"
-    ) {
-
-      await handleSession(
-        session
-      );
-
+  async (event, session) => {
+    if (event === "INITIAL_SESSION") {
+      await handleSession(session);
       return;
     }
 
     if (
-      event ===
-        "SIGNED_IN" ||
-      event ===
-        "TOKEN_REFRESHED"
+      event === "SIGNED_IN" ||
+      event === "TOKEN_REFRESHED"
     ) {
-
-      await handleSession(
-        session
-      );
-
+      await handleSession(session);
       return;
     }
 
-    if (
-      event ===
-      "SIGNED_OUT"
-    ) {
-
+    if (event === "SIGNED_OUT") {
       showLogin();
-
     }
   }
 );
@@ -778,34 +531,22 @@ supabase.auth.onAuthStateChange(
 // SESSION HANDLER
 // ============================================================
 
-async function handleSession(
-  session
-) {
-
-  if (
-    !session?.user
-  ) {
-
+async function handleSession(session) {
+  if (!session?.user) {
     showLogin();
-
     return;
   }
 
   try {
-
     const admin =
       await isCurrentUserAdmin(
         session.user.id
       );
 
     if (!admin) {
-
       if ($("login-status")) {
-
-        $("login-status")
-          .textContent =
-            "Esta cuenta no tiene permisos de administrador.";
-
+        $("login-status").textContent =
+          "Esta cuenta no tiene permisos de administrador.";
       }
 
       toast(
@@ -814,22 +555,15 @@ async function handleSession(
       );
 
       await supabase.auth.signOut();
-
       return;
     }
 
-    showApp(
-      session.user
-    );
+    showApp(session.user);
 
     startAnnouncementRealtime();
 
-    if (
-      !state.initialized
-    ) {
-
-      state.initialized =
-        true;
+    if (!state.initialized) {
+      state.initialized = true;
 
       await loadAll();
 
@@ -840,18 +574,14 @@ async function handleSession(
     }
 
   } catch (error) {
-
     console.error(
       "AUTH VALIDATION ERROR:",
       error
     );
 
     if ($("login-status")) {
-
-      $("login-status")
-        .textContent =
-          "No se pudo validar el administrador.";
-
+      $("login-status").textContent =
+        "No se pudo validar el administrador.";
     }
 
     toast(
@@ -869,43 +599,21 @@ async function handleSession(
 // ============================================================
 
 function showLogin() {
+  $("login-view")?.classList.remove("hidden");
+  $("app-view")?.classList.add("hidden");
 
-  $("login-view")
-    ?.classList.remove(
-      "hidden"
-    );
-
-  $("app-view")
-    ?.classList.add(
-      "hidden"
-    );
-
-  state.initialized =
-    false;
+  state.initialized = false;
 
   stopAnnouncementRealtime();
 }
 
-
 function showApp(user) {
-
-  $("login-view")
-    ?.classList.add(
-      "hidden"
-    );
-
-  $("app-view")
-    ?.classList.remove(
-      "hidden"
-    );
+  $("login-view")?.classList.add("hidden");
+  $("app-view")?.classList.remove("hidden");
 
   if ($("admin-email")) {
-
-    $("admin-email")
-      .textContent =
-        user.email ||
-        "Administrador";
-
+    $("admin-email").textContent =
+      user.email || "Administrador";
   }
 }
 
@@ -915,16 +623,13 @@ function showApp(user) {
 // ============================================================
 
 async function loadAll() {
-
   if (state.loading) {
     return;
   }
 
-  state.loading =
-    true;
+  state.loading = true;
 
   try {
-
     await Promise.all([
       loadOverview(),
       loadUsers(true),
@@ -935,7 +640,6 @@ async function loadAll() {
     ]);
 
   } catch (error) {
-
     console.error(
       "LOAD ALL ERROR:",
       error
@@ -947,9 +651,7 @@ async function loadAll() {
     );
 
   } finally {
-
-    state.loading =
-      false;
+    state.loading = false;
   }
 }
 
@@ -958,50 +660,40 @@ async function loadAll() {
 // OVERVIEW REFRESH
 // ============================================================
 
-$("refresh-overview")
-  ?.addEventListener(
-    "click",
-    async () => {
+$("refresh-overview")?.addEventListener(
+  "click",
+  async () => {
+    const button =
+      $("refresh-overview");
 
-      const button =
-        $("refresh-overview");
+    if (button) {
+      button.disabled = true;
+    }
 
+    try {
+      await loadOverview();
+
+      toast(
+        "Datos actualizados.",
+        "success"
+      );
+    } finally {
       if (button) {
-        button.disabled = true;
-      }
-
-      try {
-
-        await loadOverview();
-
-        toast(
-          "Datos actualizados.",
-          "success"
-        );
-
-      } finally {
-
-        if (button) {
-          button.disabled = false;
-        }
+        button.disabled = false;
       }
     }
-  );
+  }
+);
 
 
 // ============================================================
 // RANK DATA
 // ============================================================
 
-function normalizeEntries(
-  data
-) {
-
+function normalizeEntries(data) {
   if (Array.isArray(data)) {
-
     return data
       .map((item) => [
-
         item?.name ??
           item?.label ??
           "Sin nombre",
@@ -1011,53 +703,38 @@ function normalizeEntries(
           item?.value ??
           0
         )
-
       ])
       .sort(
-        (a, b) =>
-          b[1] - a[1]
+        (a, b) => b[1] - a[1]
       );
   }
 
-  return Object.entries(
-    data || {}
-  )
-    .map(
-      ([name, count]) => [
-        name,
-        Number(count) || 0
-      ]
-    )
+  return Object.entries(data || {})
+    .map(([name, count]) => [
+      name,
+      Number(count) || 0
+    ])
     .sort(
-      (a, b) =>
-        b[1] - a[1]
+      (a, b) => b[1] - a[1]
     );
 }
-
 
 function renderRanks(
   id,
   data,
   bars = false
 ) {
-
-  const root =
-    $(id);
+  const root = $(id);
 
   if (!root) {
     return;
   }
 
   const list =
-    normalizeEntries(
-      data
-    ).slice(
-      0,
-      8
-    );
+    normalizeEntries(data)
+      .slice(0, 8);
 
   if (!list.length) {
-
     root.innerHTML = `
       <div class="empty-state">
         Sin datos todavía.
@@ -1070,52 +747,35 @@ function renderRanks(
   const max =
     Math.max(
       ...list.map(
-        (item) =>
-          item[1]
+        (item) => item[1]
       ),
       1
     );
 
   if (bars) {
-
     root.innerHTML =
       list
         .map(
           ([name, count]) => {
-
             const percentage =
               Math.max(
                 5,
                 Math.min(
                   100,
-                  (count / max) *
-                    100
+                  (count / max) * 100
                 )
               );
 
             return `
               <div class="bar-row">
-
                 <div class="bar-meta">
-
-                  <span>
-                    ${esc(name)}
-                  </span>
-
-                  <strong>
-                    ${num(count)}
-                  </strong>
-
+                  <span>${esc(name)}</span>
+                  <strong>${num(count)}</strong>
                 </div>
 
                 <div class="bar-track">
-
-                  <i
-                    style="width:${percentage}%"
-                  ></i>
-
+                  <i style="width:${percentage}%"></i>
                 </div>
-
               </div>
             `;
           }
@@ -1129,9 +789,7 @@ function renderRanks(
     list
       .map(
         ([name, count], index) => `
-
           <div class="rank-row">
-
             <span class="rank">
               ${String(
                 index + 1
@@ -1145,7 +803,6 @@ function renderRanks(
             <strong>
               ${num(count)}
             </strong>
-
           </div>
         `
       )
@@ -1158,60 +815,44 @@ function renderRanks(
 // ============================================================
 
 async function loadOverview() {
-
   try {
-
     const [
       usersResult,
       stylesResult,
       versionsResult,
       announcementsResult
-    ] =
-      await Promise.all([
+    ] = await Promise.all([
+      supabase
+        .from("app_users")
+        .select(
+          "id,username,created_at,updated_at"
+        ),
 
-        supabase
-          .from("app_users")
-          .select(
-            "id,username,created_at,updated_at"
-          ),
+      supabase
+        .from("user_styles")
+        .select("style_id"),
 
-        supabase
-          .from("user_styles")
-          .select(
-            "style_id"
-          ),
+      supabase
+        .from("app_versions")
+        .select(
+          "id,version_name,version_code,is_active"
+        )
+        .order(
+          "version_code",
+          { ascending: false }
+        ),
 
-        supabase
-          .from("app_versions")
-          .select(
-            "id,version_name,version_code,is_active"
-          )
-          .order(
-            "version_code",
-            {
-              ascending: false
-            }
-          ),
-
-        supabase
-          .from("remote_announcements")
-          .select(
-            "id,title,message,is_active,published_at,expires_at"
-          )
-          .order(
-            "published_at",
-            {
-              ascending: false
-            }
-          )
-          .limit(50)
-
-      ]);
-
-
-    // ========================================================
-    // VALIDACIÓN DE ERRORES
-    // ========================================================
+      supabase
+        .from("remote_announcements")
+        .select(
+          "id,title,message,is_active,published_at,expires_at"
+        )
+        .order(
+          "published_at",
+          { ascending: false }
+        )
+        .limit(50)
+    ]);
 
     if (usersResult.error) {
       throw usersResult.error;
@@ -1229,11 +870,6 @@ async function loadOverview() {
       throw announcementsResult.error;
     }
 
-
-    // ========================================================
-    // DATA
-    // ========================================================
-
     const users =
       usersResult.data || [];
 
@@ -1246,55 +882,28 @@ async function loadOverview() {
     const announcements =
       announcementsResult.data || [];
 
-
-    // ========================================================
-    // ESTILOS
-    // ========================================================
-
     const styleCounts = {};
 
-    styles.forEach(
-      (item) => {
+    styles.forEach((item) => {
+      const id =
+        item.style_id || "unknown";
 
-        const id =
-          item.style_id ||
-          "unknown";
-
-        styleCounts[id] =
-          (
-            styleCounts[id] ||
-            0
-          ) + 1;
-
-      }
-    );
-
-
-    // ========================================================
-    // VERSIONES
-    // ========================================================
+      styleCounts[id] =
+        (styleCounts[id] || 0) + 1;
+    });
 
     const versionCounts = {};
 
-    versions.forEach(
-      (item) => {
+    versions.forEach((item) => {
+      const name =
+        item.version_name ||
+        String(
+          item.version_code || "—"
+        );
 
-        const name =
-          item.version_name ||
-          String(
-            item.version_code ||
-            "—"
-          );
-
-        versionCounts[name] =
-          (
-            versionCounts[name] ||
-            0
-          ) + 1;
-
-      }
-    );
-
+      versionCounts[name] =
+        (versionCounts[name] || 0) + 1;
+    });
 
     const activeVersions =
       versions.filter(
@@ -1302,27 +911,16 @@ async function loadOverview() {
           item.is_active !== false
       );
 
-
-    // ========================================================
-    // AVISOS
-    // ========================================================
-
-    const now =
-      Date.now();
+    const now = Date.now();
 
     const activeAnnouncements =
       announcements.filter(
         (item) => {
-
-          if (
-            item.is_active === false
-          ) {
+          if (item.is_active === false) {
             return false;
           }
 
-          if (
-            !item.expires_at
-          ) {
+          if (!item.expires_at) {
             return true;
           }
 
@@ -1332,174 +930,95 @@ async function loadOverview() {
             ).getTime();
 
           return (
-            !Number.isNaN(
-              expiration
-            ) &&
+            !Number.isNaN(expiration) &&
             expiration > now
           );
-
         }
       );
-
-
-    // ========================================================
-    // REGISTROS ÚLTIMOS 30 DÍAS
-    // ========================================================
 
     const thirtyDaysAgo =
       Date.now() -
-      (
-        30 *
+      30 *
         24 *
         60 *
         60 *
-        1000
-      );
-
+        1000;
 
     const recentRegistrations =
-      users.filter(
-        (user) => {
-
-          const created =
-            user.created_at;
-
-          if (!created) {
-            return false;
-          }
-
-          const time =
-            new Date(
-              created
-            ).getTime();
-
-          return (
-            !Number.isNaN(time) &&
-            time >= thirtyDaysAgo
-          );
-
+      users.filter((user) => {
+        if (!user.created_at) {
+          return false;
         }
-      );
 
+        const time =
+          new Date(
+            user.created_at
+          ).getTime();
 
-    // ========================================================
-    // USUARIOS ACTIVOS
-    // ========================================================
+        return (
+          !Number.isNaN(time) &&
+          time >= thirtyDaysAgo
+        );
+      });
 
     const activeUsers =
-      users.filter(
-        (user) => {
-
-          if (
-            !user.updated_at
-          ) {
-            return false;
-          }
-
-          const updated =
-            new Date(
-              user.updated_at
-            ).getTime();
-
-          if (
-            Number.isNaN(updated)
-          ) {
-            return false;
-          }
-
-          // Consideramos activo si tuvo actividad
-          // durante los últimos 30 días.
-          return (
-            updated >=
-            thirtyDaysAgo
-          );
-
+      users.filter((user) => {
+        if (!user.updated_at) {
+          return false;
         }
-      );
 
+        const updated =
+          new Date(
+            user.updated_at
+          ).getTime();
 
-    // ========================================================
-    // STATS
-    // ========================================================
+        return (
+          !Number.isNaN(updated) &&
+          updated >= thirtyDaysAgo
+        );
+      });
 
     if ($("stat-users")) {
-
-      $("stat-users")
-        .textContent =
-          num(
-            users.length
-          );
-
+      $("stat-users").textContent =
+        num(users.length);
     }
-
 
     if ($("stat-active")) {
-
-      $("stat-active")
-        .textContent =
-          num(
-            activeUsers.length
-          );
-
+      $("stat-active").textContent =
+        num(activeUsers.length);
     }
-
 
     if ($("stat-registrations")) {
-
-      $("stat-registrations")
-        .textContent =
-          num(
-            recentRegistrations.length
-          );
-
+      $("stat-registrations").textContent =
+        num(
+          recentRegistrations.length
+        );
     }
-
 
     if ($("stat-versions")) {
-
-      $("stat-versions")
-        .textContent =
-          num(
-            activeVersions.length
-          );
-
+      $("stat-versions").textContent =
+        num(
+          activeVersions.length
+        );
     }
-
-
-    // ========================================================
-    // SI EXISTE UNA TARJETA PARA AVISOS
-    // ========================================================
 
     if ($("stat-announcements")) {
-
-      $("stat-announcements")
-        .textContent =
-          num(
-            activeAnnouncements.length
-          );
-
+      $("stat-announcements").textContent =
+        num(
+          activeAnnouncements.length
+        );
     }
-
-
-    // ========================================================
-    // AVISO ACTIVO EN RESUMEN
-    // ========================================================
 
     const overviewAnnouncement =
       $("overview-announcement");
 
-
     if (overviewAnnouncement) {
-
       const latestActive =
         activeAnnouncements[0];
 
       if (latestActive) {
-
         overviewAnnouncement.innerHTML = `
-
           <div class="overview-announcement-card">
-
             <span class="announcement-badge">
               AVISO ACTIVO
             </span>
@@ -1526,29 +1045,16 @@ async function loadOverview() {
                 )
               )}
             </small>
-
           </div>
-
         `;
-
       } else {
-
         overviewAnnouncement.innerHTML = `
-
           <div class="empty-state">
             No hay avisos activos.
           </div>
-
         `;
-
       }
-
     }
-
-
-    // ========================================================
-    // GRÁFICA DE VERSIONES
-    // ========================================================
 
     renderRanks(
       "version-chart",
@@ -1556,51 +1062,29 @@ async function loadOverview() {
       true
     );
 
-
-    // ========================================================
-    // ESTILOS UTILIZADOS
-    // ========================================================
-
     renderRanks(
       "style-chart",
       styleCounts
     );
-
-
-    // ========================================================
-    // UBICACIONES
-    // ========================================================
 
     renderRanks(
       "country-list",
       {}
     );
 
-
     renderRanks(
       "city-list",
       {}
     );
 
-
-    // ========================================================
-    // ACTUALIZAR AVISOS SI LA VISTA ESTÁ ABIERTA
-    // ========================================================
-
-    if (
-      $("view-announcements")
-    ) {
-
+    if ($("view-announcements")) {
       state.announcements =
         announcements;
 
       renderAnnouncements();
-
     }
 
-
   } catch (error) {
-
     console.error(
       "OVERVIEW ERROR:",
       error
@@ -1610,9 +1094,150 @@ async function loadOverview() {
       "No se pudo cargar el resumen.",
       "error"
     );
+  }
+}
 
+
+// ============================================================
+// USERS
+// ============================================================
+//
+// ESTA FUNCIÓN FALTABA EN EL ARCHIVO ANTERIOR.
+// ============================================================
+
+async function loadUsers(reset = false) {
+  const root = $("users-table");
+
+  if (!root) {
+    return;
   }
 
+  if (reset) {
+    state.userPage = 1;
+    state.currentUserCursor = null;
+    state.userCursors = [];
+  }
+
+  root.innerHTML = `
+    <tr>
+      <td colspan="8">
+        <div class="empty-state">
+          Cargando usuarios…
+        </div>
+      </td>
+    </tr>
+  `;
+
+  try {
+    const from =
+      (state.userPage - 1) *
+      state.usersPageSize;
+
+    const to =
+      from +
+      state.usersPageSize -
+      1;
+
+    const {
+      data,
+      error,
+      count
+    } =
+      await supabase
+        .from("app_users")
+        .select("*", {
+          count: "exact"
+        })
+        .order(
+          "created_at",
+          {
+            ascending: false
+          }
+        )
+        .range(
+          from,
+          to
+        );
+
+    if (error) {
+      throw error;
+    }
+
+    state.users =
+      data || [];
+
+    renderUsers();
+
+    const total =
+      Number(count || 0);
+
+    const totalPages =
+      Math.max(
+        1,
+        Math.ceil(
+          total /
+          state.usersPageSize
+        )
+      );
+
+    const prev =
+      $("users-prev");
+
+    const next =
+      $("users-next");
+
+    if (prev) {
+      prev.disabled =
+        state.userPage <= 1;
+    }
+
+    if (next) {
+      next.disabled =
+        state.userPage >=
+        totalPages ||
+        state.users.length <
+          state.usersPageSize;
+    }
+
+    const pageIndicator =
+      $("users-page");
+
+    if (pageIndicator) {
+      pageIndicator.textContent =
+        `${state.userPage} / ${totalPages}`;
+    }
+
+    const countElement =
+      $("users-count");
+
+    if (countElement) {
+      countElement.textContent =
+        num(total);
+    }
+
+    updateFilters();
+
+  } catch (error) {
+    console.error(
+      "USERS ERROR:",
+      error
+    );
+
+    root.innerHTML = `
+      <tr>
+        <td colspan="8">
+          <div class="empty-state">
+            No se pudieron cargar los usuarios.
+          </div>
+        </td>
+      </tr>
+    `;
+
+    toast(
+      "No se pudieron cargar los usuarios.",
+      "error"
+    );
+  }
 }
 
 
@@ -1621,7 +1246,6 @@ async function loadOverview() {
 // ============================================================
 
 function renderUsers() {
-
   const root =
     $("users-table");
 
@@ -1633,56 +1257,46 @@ function renderUsers() {
     $("user-search")
       ?.value
       .trim()
-      .toLowerCase() ||
-    "";
+      .toLowerCase() || "";
 
   const country =
     $("country-filter")
-      ?.value ||
-    "";
+      ?.value || "";
 
   const version =
     $("version-filter")
-      ?.value ||
-    "";
+      ?.value || "";
 
   const filtered =
-    state.users.filter(
-      (user) => {
+    state.users.filter((user) => {
+      const searchable = [
+        user.email,
+        user.uid,
+        user.id,
+        user.username
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
 
-        const searchable =
-          [
-            user.email,
-            user.uid,
-            user.id,
-            user.username
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
+      const matchesSearch =
+        !term ||
+        searchable.includes(term);
 
-        const matchesSearch =
-          !term ||
-          searchable.includes(
-            term
-          );
+      const matchesCountry =
+        !country;
 
-        const matchesCountry =
-          !country;
+      const matchesVersion =
+        !version;
 
-        const matchesVersion =
-          !version;
-
-        return (
-          matchesSearch &&
-          matchesCountry &&
-          matchesVersion
-        );
-      }
-    );
+      return (
+        matchesSearch &&
+        matchesCountry &&
+        matchesVersion
+      );
+    });
 
   if (!filtered.length) {
-
     root.innerHTML = `
       <tr>
         <td colspan="8">
@@ -1698,153 +1312,129 @@ function renderUsers() {
 
   root.innerHTML =
     filtered
-      .map(
-        (user) => {
+      .map((user) => {
+        const username =
+          user.username ||
+          "Usuario";
 
-          const username =
-            user.username ||
-            "Usuario";
+        const avatar =
+          username
+            .charAt(0)
+            .toUpperCase();
 
-          const avatar =
-            username
-              .charAt(0)
-              .toUpperCase();
+        const version =
+          user.version_name ||
+          user.app_version ||
+          user.version ||
+          "—";
 
-          const version =
-            user.version_name ||
-            user.app_version ||
-            user.version ||
-            "—";
+        const style =
+          user.selected_style ||
+          "sporty";
 
-          const style =
-            user.selected_style ||
-            "sporty";
+        return `
+          <tr
+            data-id="${esc(user.id)}"
+            tabindex="0"
+          >
 
-          return `
-            <tr
-              data-id="${esc(
-                user.id
-              )}"
-              tabindex="0"
-            >
+            <td>
+              <div class="user-cell">
 
-              <td>
-
-                <div class="user-cell">
-
-                  <span class="avatar">
-                    ${esc(avatar)}
-                  </span>
-
-                  <div>
-
-                    <strong>
-                      ${esc(username)}
-                    </strong>
-
-                    <small>
-                      ${esc(user.id)}
-                    </small>
-
-                  </div>
-
-                </div>
-
-              </td>
-
-              <td>
-                ${esc(
-                  fmt(
-                    user.created_at ||
-                    user.inserted_at ||
-                    user.updated_at
-                  )
-                )}
-              </td>
-
-              <td>
-                ${esc(
-                  fmt(
-                    user.updated_at
-                  )
-                )}
-              </td>
-
-              <td>
-                —
-              </td>
-
-              <td>
-                —
-              </td>
-
-              <td>
-
-                <span class="version-pill">
-                  ${esc(version)}
+                <span class="avatar">
+                  ${esc(avatar)}
                 </span>
 
-              </td>
+                <div>
+                  <strong>
+                    ${esc(username)}
+                  </strong>
 
-              <td>
-                ${esc(style)}
-              </td>
+                  <small>
+                    ${esc(user.id)}
+                  </small>
+                </div>
 
-              <td>
-                ${esc(
-                  fmt(
-                    user.updated_at
-                  )
-                )}
-              </td>
+              </div>
+            </td>
 
-            </tr>
-          `;
-        }
-      )
+            <td>
+              ${esc(
+                fmt(
+                  user.created_at ||
+                  user.inserted_at ||
+                  user.updated_at
+                )
+              )}
+            </td>
+
+            <td>
+              ${esc(
+                fmt(
+                  user.updated_at
+                )
+              )}
+            </td>
+
+            <td>
+              —
+            </td>
+
+            <td>
+              —
+            </td>
+
+            <td>
+              <span class="version-pill">
+                ${esc(version)}
+              </span>
+            </td>
+
+            <td>
+              ${esc(style)}
+            </td>
+
+            <td>
+              ${esc(
+                fmt(
+                  user.updated_at
+                )
+              )}
+            </td>
+
+          </tr>
+        `;
+      })
       .join("");
 
   qsa(
     "#users-table tr[data-id]"
-  )
-    .forEach(
-      (row) => {
-
-        row.addEventListener(
-          "click",
-          () => {
-
-            openUser(
-              row.dataset.id
-            );
-
-          }
+  ).forEach((row) => {
+    row.addEventListener(
+      "click",
+      () => {
+        openUser(
+          row.dataset.id
         );
-
-        row.addEventListener(
-          "keydown",
-          (event) => {
-
-            if (
-              event.key ===
-                "Enter" ||
-              event.key ===
-                " "
-            ) {
-
-              event.preventDefault();
-
-              openUser(
-                row.dataset.id
-              );
-
-            }
-
-          }
-        );
-
       }
     );
+
+    row.addEventListener(
+      "keydown",
+      (event) => {
+        if (
+          event.key === "Enter" ||
+          event.key === " "
+        ) {
+          event.preventDefault();
+
+          openUser(
+            row.dataset.id
+          );
+        }
+      }
+    );
+  });
 }
 
 
@@ -1853,182 +1443,138 @@ function renderUsers() {
 // ============================================================
 
 function updateFilters() {
-
-  const countries = [];
-
-  const versions = [];
-
   const currentCountry =
-    $("country-filter")
-      ?.value ||
+    $("country-filter")?.value ||
     "";
 
   const currentVersion =
-    $("version-filter")
-      ?.value ||
+    $("version-filter")?.value ||
     "";
 
   if ($("country-filter")) {
+    $("country-filter").innerHTML = `
+      <option value="">
+        Todos los países
+      </option>
+    `;
 
-    $("country-filter")
-      .innerHTML = `
-        <option value="">
-          Todos los países
-        </option>
-      `;
-
-    $("country-filter")
-      .value =
-        currentCountry;
+    $("country-filter").value =
+      currentCountry;
   }
 
   if ($("version-filter")) {
+    $("version-filter").innerHTML = `
+      <option value="">
+        Todas las versiones
+      </option>
+    `;
 
-    $("version-filter")
-      .innerHTML = `
-        <option value="">
-          Todas las versiones
-        </option>
-      `;
-
-    $("version-filter")
-      .value =
-        currentVersion;
+    $("version-filter").value =
+      currentVersion;
   }
 
   return {
-    countries,
-    versions
+    countries: [],
+    versions: []
   };
 }
-
 
 [
   "user-search",
   "country-filter",
   "version-filter"
-]
-  .forEach(
-    (id) => {
-
-      $(id)
-        ?.addEventListener(
-          "input",
-          renderUsers
-        );
-
-      $(id)
-        ?.addEventListener(
-          "change",
-          renderUsers
-        );
-
-    }
+].forEach((id) => {
+  $(id)?.addEventListener(
+    "input",
+    renderUsers
   );
 
-
-$("clear-user-filters")
-  ?.addEventListener(
-    "click",
-    () => {
-
-      if ($("user-search")) {
-        $("user-search").value =
-          "";
-      }
-
-      if ($("country-filter")) {
-        $("country-filter").value =
-          "";
-      }
-
-      if ($("version-filter")) {
-        $("version-filter").value =
-          "";
-      }
-
-      renderUsers();
-    }
+  $(id)?.addEventListener(
+    "change",
+    renderUsers
   );
+});
+
+$("clear-user-filters")?.addEventListener(
+  "click",
+  () => {
+    if ($("user-search")) {
+      $("user-search").value = "";
+    }
+
+    if ($("country-filter")) {
+      $("country-filter").value = "";
+    }
+
+    if ($("version-filter")) {
+      $("version-filter").value = "";
+    }
+
+    renderUsers();
+  }
+);
 
 
 // ============================================================
 // USER PAGINATION
 // ============================================================
 
-$("users-next")
-  ?.addEventListener(
-    "click",
-    async () => {
+$("users-next")?.addEventListener(
+  "click",
+  async () => {
+    const button =
+      $("users-next");
 
-      if (
-        $("users-next").disabled
-      ) {
-        return;
-      }
-
-      state.userPage++;
-
-      await loadUsers();
+    if (button?.disabled) {
+      return;
     }
-  );
 
+    state.userPage++;
 
-$("users-prev")
-  ?.addEventListener(
-    "click",
-    async () => {
+    await loadUsers();
+  }
+);
 
-      if (
-        state.userPage <= 1
-      ) {
-        return;
-      }
-
-      state.userPage--;
-
-      await loadUsers();
+$("users-prev")?.addEventListener(
+  "click",
+  async () => {
+    if (state.userPage <= 1) {
+      return;
     }
-  );
+
+    state.userPage--;
+
+    await loadUsers();
+  }
+);
 
 
 // ============================================================
 // USER DETAIL
 // ============================================================
 
-async function openUser(
-  id
-) {
-
+async function openUser(id) {
   if (!id) {
     return;
   }
 
   try {
-
     const [
       profileResult,
       settingsResult,
       stylesResult
     ] =
       await Promise.all([
-
         supabase
           .from("app_users")
           .select("*")
-          .eq(
-            "id",
-            id
-          )
+          .eq("id", id)
           .maybeSingle(),
 
         supabase
           .from("user_settings")
           .select("*")
-          .eq(
-            "user_id",
-            id
-          )
+          .eq("user_id", id)
           .maybeSingle(),
 
         supabase
@@ -2036,39 +1582,26 @@ async function openUser(
           .select(
             "style_id,unlocked_at"
           )
-          .eq(
-            "user_id",
-            id
-          )
+          .eq("user_id", id)
           .order(
             "unlocked_at",
-            {
-              ascending: false
-            }
+            { ascending: false }
           )
-
       ]);
 
-    if (
-      profileResult.error
-    ) {
+    if (profileResult.error) {
       throw profileResult.error;
     }
 
-    if (
-      settingsResult.error
-    ) {
+    if (settingsResult.error) {
       throw settingsResult.error;
     }
 
-    if (
-      stylesResult.error
-    ) {
+    if (stylesResult.error) {
       throw stylesResult.error;
     }
 
     if (!profileResult.data) {
-
       toast(
         "Usuario no encontrado.",
         "error"
@@ -2077,17 +1610,13 @@ async function openUser(
       return;
     }
 
-    const user =
-      {
-        ...profileResult.data,
-        ...(settingsResult.data ||
-          {})
-      };
+    const user = {
+      ...profileResult.data,
+      ...(settingsResult.data || {})
+    };
 
     const styles =
-      safeArray(
-        stylesResult.data
-      );
+      safeArray(stylesResult.data);
 
     const username =
       user.username ||
@@ -2099,312 +1628,215 @@ async function openUser(
         .toUpperCase();
 
     const accountRows = [
-
-      [
-        "UID",
-        user.id
-      ],
-
-      [
-        "Usuario",
-        user.username
-      ],
-
-      [
-        "Correo",
-        user.email
-      ],
-
-      [
-        "Creado",
-        fmt(
-          user.created_at
-        )
-      ],
-
-      [
-        "Actualizado",
-        fmt(
-          user.updated_at
-        )
-      ]
-
+      ["UID", user.id],
+      ["Usuario", user.username],
+      ["Correo", user.email],
+      ["Creado", fmt(user.created_at)],
+      ["Actualizado", fmt(user.updated_at)]
     ];
 
     const deviceRows = [
-
       [
         "Modelo",
         user.device_model ||
         user.model ||
         "No registrado"
       ],
-
       [
         "Sistema",
         user.device_os ||
         user.os_version ||
         "No registrado"
       ],
-
-      [
-        "Idioma",
-        user.language
-      ],
-
-      [
-        "Unidad",
-        user.temp_unit
-      ]
-
+      ["Idioma", user.language],
+      ["Unidad", user.temp_unit]
     ];
 
     const preferenceRows = [
-
       [
         "Estilo seleccionado",
         user.selected_style
       ],
-
       [
         "Color",
         user.accent_color
       ],
-
       [
         "Fondo",
         user.background_path
       ],
-
       [
         "Modelo 3D",
         user.model_path
       ]
-
     ];
 
-    const rows =
-      (items) =>
-        items
-          .map(
-            ([label, value]) => `
+    const rows = (items) =>
+      items
+        .map(
+          ([label, value]) => `
+            <div>
+              <span>
+                ${esc(label)}
+              </span>
 
-              <div>
+              <strong>
+                ${esc(value || "—")}
+              </strong>
+            </div>
+          `
+        )
+        .join("");
 
-                <span>
-                  ${esc(label)}
-                </span>
+    $("user-detail-root").innerHTML = `
+      <div class="profile-head">
 
-                <strong>
-                  ${esc(
-                    value ||
-                    "—"
-                  )}
-                </strong>
-
-              </div>
-
-            `
-          )
-          .join("");
-
-    $("user-detail-root")
-      .innerHTML = `
-
-        <div class="profile-head">
-
-          <div class="profile-avatar">
-            ${esc(avatar)}
-          </div>
-
-          <div>
-
-            <p class="eyebrow">
-              USER PROFILE
-            </p>
-
-            <h1>
-              ${esc(username)}
-            </h1>
-
-            <p class="muted">
-              ${esc(user.id)}
-            </p>
-
-          </div>
-
-          <span class="role-badge">
-            USER
-          </span>
-
+        <div class="profile-avatar">
+          ${esc(avatar)}
         </div>
 
+        <div>
+          <p class="eyebrow">
+            USER PROFILE
+          </p>
 
-        <div class="profile-grid">
+          <h1>
+            ${esc(username)}
+          </h1>
 
-
-          <article class="panel">
-
-            <div class="panel-head">
-
-              <p class="eyebrow">
-                IDENTIDAD
-              </p>
-
-              <h3>
-                Cuenta
-              </h3>
-
-            </div>
-
-            <div class="detail-list">
-              ${rows(
-                accountRows
-              )}
-            </div>
-
-          </article>
-
-
-          <article class="panel">
-
-            <div class="panel-head">
-
-              <p class="eyebrow">
-                ENTORNO
-              </p>
-
-              <h3>
-                Configuración
-              </h3>
-
-            </div>
-
-            <div class="detail-list">
-              ${rows(
-                deviceRows
-              )}
-            </div>
-
-          </article>
-
-
-          <article class="panel">
-
-            <div class="panel-head">
-
-              <p class="eyebrow">
-                DISEÑOS
-              </p>
-
-              <h3>
-                Estilos desbloqueados
-              </h3>
-
-            </div>
-
-            <div class="chips">
-
-              ${
-                styles.length
-                  ? styles
-                      .map(
-                        (style) => `
-
-                          <span class="chip">
-                            ${esc(
-                              style.style_id
-                            )}
-                          </span>
-
-                        `
-                      )
-                      .join("")
-                  : `
-
-                    <span class="muted">
-                      Sin estilos registrados.
-                    </span>
-
-                  `
-              }
-
-            </div>
-
-          </article>
-
-
-          <article class="panel">
-
-            <div class="panel-head">
-
-              <p class="eyebrow">
-                PREFERENCIAS
-              </p>
-
-              <h3>
-                DashCore
-              </h3>
-
-            </div>
-
-            <div class="detail-list">
-              ${rows(
-                preferenceRows
-              )}
-            </div>
-
-          </article>
-
-
+          <p class="muted">
+            ${esc(user.id)}
+          </p>
         </div>
 
+        <span class="role-badge">
+          USER
+        </span>
 
-        <article class="panel activity-panel">
+      </div>
 
+      <div class="profile-grid">
+
+        <article class="panel">
           <div class="panel-head">
-
             <p class="eyebrow">
-              STATUS
+              IDENTIDAD
             </p>
 
             <h3>
-              Estado de sincronización
+              Cuenta
             </h3>
-
           </div>
 
-          <div class="activity-row">
-
-            <span class="activity-dot"></span>
-
-            <div>
-
-              <strong>
-                Perfil sincronizado
-              </strong>
-
-              <small>
-                ${esc(
-                  fmt(
-                    user.updated_at
-                  )
-                )}
-              </small>
-
-            </div>
-
+          <div class="detail-list">
+            ${rows(accountRows)}
           </div>
-
         </article>
-      `;
 
-    view(
-      "user-detail"
-    );
+        <article class="panel">
+          <div class="panel-head">
+            <p class="eyebrow">
+              ENTORNO
+            </p>
+
+            <h3>
+              Configuración
+            </h3>
+          </div>
+
+          <div class="detail-list">
+            ${rows(deviceRows)}
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <p class="eyebrow">
+              DISEÑOS
+            </p>
+
+            <h3>
+              Estilos desbloqueados
+            </h3>
+          </div>
+
+          <div class="chips">
+            ${
+              styles.length
+                ? styles
+                    .map(
+                      (style) => `
+                        <span class="chip">
+                          ${esc(
+                            style.style_id
+                          )}
+                        </span>
+                      `
+                    )
+                    .join("")
+                : `
+                    <span class="muted">
+                      Sin estilos registrados.
+                    </span>
+                  `
+            }
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <p class="eyebrow">
+              PREFERENCIAS
+            </p>
+
+            <h3>
+              DashCore
+            </h3>
+          </div>
+
+          <div class="detail-list">
+            ${rows(preferenceRows)}
+          </div>
+        </article>
+
+      </div>
+
+      <article class="panel activity-panel">
+
+        <div class="panel-head">
+          <p class="eyebrow">
+            STATUS
+          </p>
+
+          <h3>
+            Estado de sincronización
+          </h3>
+        </div>
+
+        <div class="activity-row">
+
+          <span class="activity-dot"></span>
+
+          <div>
+            <strong>
+              Perfil sincronizado
+            </strong>
+
+            <small>
+              ${esc(
+                fmt(user.updated_at)
+              )}
+            </small>
+          </div>
+
+        </div>
+
+      </article>
+    `;
+
+    view("user-detail");
 
   } catch (error) {
-
     console.error(
       "USER DETAIL ERROR:",
       error
@@ -2423,7 +1855,6 @@ async function openUser(
 // ============================================================
 
 async function loadStyles() {
-
   const root =
     $("styles-grid");
 
@@ -2432,16 +1863,13 @@ async function loadStyles() {
   }
 
   try {
-
     const {
       data,
       error
     } =
       await supabase
         .from("user_styles")
-        .select(
-          "style_id"
-        );
+        .select("style_id");
 
     if (error) {
       throw error;
@@ -2449,44 +1877,28 @@ async function loadStyles() {
 
     const counts = {};
 
-    (data || [])
-      .forEach(
-        (item) => {
+    (data || []).forEach((item) => {
+      const id =
+        item.style_id ||
+        "unknown";
 
-          const id =
-            item.style_id ||
-            "unknown";
-
-          counts[id] =
-            (
-              counts[id] ||
-              0
-            ) + 1;
-
-        }
-      );
+      counts[id] =
+        (counts[id] || 0) + 1;
+    });
 
     state.styles =
-      Object.entries(
-        counts
-      )
-        .map(
-          ([id, count]) => ({
-            id,
-            usageCount:
-              count
-          })
-        )
+      Object.entries(counts)
+        .map(([id, count]) => ({
+          id,
+          usageCount: count
+        }))
         .sort(
           (a, b) =>
             b.usageCount -
             a.usageCount
         );
 
-    if (
-      !state.styles.length
-    ) {
-
+    if (!state.styles.length) {
       root.innerHTML = `
         <div class="empty-state">
           No hay estilos registrados.
@@ -2500,7 +1912,6 @@ async function loadStyles() {
       state.styles
         .map(
           (style) => `
-
             <article class="style-card">
 
               <div class="style-preview">
@@ -2518,56 +1929,40 @@ async function loadStyles() {
 
               </div>
 
-
               <div class="style-card-body">
 
                 <div>
-
                   <h3>
-                    ${esc(
-                      style.id
-                    )}
+                    ${esc(style.id)}
                   </h3>
 
                   <small>
-                    ${esc(
-                      style.id
-                    )}
+                    ${esc(style.id)}
                   </small>
-
                 </div>
 
                 <strong>
-                  ${num(
-                    style.usageCount
-                  )}
+                  ${num(style.usageCount)}
                 </strong>
 
               </div>
 
-
               <div class="style-card-foot">
-
                 <span>
                   Usuarios
                 </span>
 
                 <span>
-                  ${num(
-                    style.usageCount
-                  )}
+                  ${num(style.usageCount)}
                 </span>
-
               </div>
 
             </article>
-
           `
         )
         .join("");
 
   } catch (error) {
-
     console.error(
       "STYLES ERROR:",
       error
@@ -2587,7 +1982,6 @@ async function loadStyles() {
 // ============================================================
 
 async function loadLocations() {
-
   const countryRoot =
     $("location-countries");
 
@@ -2595,7 +1989,6 @@ async function loadLocations() {
     $("location-cities");
 
   if (countryRoot) {
-
     countryRoot.innerHTML = `
       <div class="empty-state">
         No hay columnas de ubicación
@@ -2605,7 +1998,6 @@ async function loadLocations() {
   }
 
   if (cityRoot) {
-
     cityRoot.innerHTML = `
       <div class="empty-state">
         Ubicaciones no configuradas.
@@ -2624,11 +2016,9 @@ async function loadLocations() {
 // ============================================================
 
 function initializeMap() {
-
   if (
     state.map ||
-    typeof L ===
-      "undefined"
+    typeof L === "undefined"
   ) {
     return;
   }
@@ -2652,8 +2042,7 @@ function initializeMap() {
     );
 
   L.control.zoom({
-    position:
-      "bottomright"
+    position: "bottomright"
   }).addTo(
     state.map
   );
@@ -2662,7 +2051,6 @@ function initializeMap() {
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     {
       maxZoom: 18,
-
       attribution:
         "© OpenStreetMap contributors"
     }
@@ -2671,20 +2059,12 @@ function initializeMap() {
   );
 }
 
-
 function clearMarkers() {
+  state.markers.forEach(
+    (marker) => marker.remove()
+  );
 
-  state.markers
-    .forEach(
-      (marker) => {
-
-        marker.remove();
-
-      }
-    );
-
-  state.markers =
-    [];
+  state.markers = [];
 }
 
 
@@ -2693,7 +2073,6 @@ function clearMarkers() {
 // ============================================================
 
 async function loadVersions() {
-
   const root =
     $("versions-list");
 
@@ -2702,7 +2081,6 @@ async function loadVersions() {
   }
 
   try {
-
     const {
       data,
       error
@@ -2725,10 +2103,7 @@ async function loadVersions() {
     state.versions =
       data || [];
 
-    if (
-      !state.versions.length
-    ) {
-
+    if (!state.versions.length) {
       root.innerHTML = `
         <div class="empty-state">
           No hay versiones publicadas.
@@ -2742,17 +2117,13 @@ async function loadVersions() {
       state.versions
         .map(
           (version) => {
-
             const required =
-              version.is_mandatory ===
-              true;
+              version.is_mandatory === true;
 
             const active =
-              version.is_active !==
-              false;
+              version.is_active !== false;
 
             return `
-
               <article class="version-card">
 
                 <div class="version-main">
@@ -2784,7 +2155,6 @@ async function loadVersions() {
 
                 </div>
 
-
                 <div class="version-meta">
 
                   <span>
@@ -2799,13 +2169,11 @@ async function loadVersions() {
                       ? "danger"
                       : ""
                   }">
-
                     ${
                       required
                         ? "OBLIGATORIA"
                         : "NORMAL"
                     }
-
                   </span>
 
                   <span class="${
@@ -2813,13 +2181,11 @@ async function loadVersions() {
                       ? "success"
                       : ""
                   }">
-
                     ${
                       active
                         ? "ACTIVA"
                         : "INACTIVA"
                     }
-
                   </span>
 
                   <button
@@ -2840,28 +2206,20 @@ async function loadVersions() {
         )
         .join("");
 
-    qsa(
-      ".edit-version"
-    )
-      .forEach(
-        (button) => {
-
-          button.addEventListener(
-            "click",
-            () => {
-
-              openVersion(
-                button.dataset.id
-              );
-
-            }
-          );
-
-        }
-      );
+    qsa(".edit-version").forEach(
+      (button) => {
+        button.addEventListener(
+          "click",
+          () => {
+            openVersion(
+              button.dataset.id
+            );
+          }
+        );
+      }
+    );
 
   } catch (error) {
-
     console.error(
       "VERSIONS ERROR:",
       error
@@ -2883,96 +2241,61 @@ async function loadVersions() {
 const versionModal =
   $("version-modal");
 
-
 function resetVersionForm() {
-
-  $("version-form")
-    ?.reset();
+  $("version-form")?.reset();
 
   if ($("v-active")) {
-
-    $("v-active")
-      .checked = true;
-
+    $("v-active").checked = true;
   }
 
   if ($("v-required")) {
-
-    $("v-required")
-      .checked = false;
-
+    $("v-required").checked = false;
   }
 
   if ($("version-status")) {
-
-    $("version-status")
-      .textContent = "";
-
+    $("version-status").textContent = "";
   }
 }
 
-
 function closeVersionModal() {
+  versionModal?.classList.add(
+    "hidden"
+  );
 
-  versionModal
-    ?.classList.add(
-      "hidden"
-    );
-
-  state.editingVersion =
-    null;
+  state.editingVersion = null;
 
   resetVersionForm();
 }
 
+qsa("[data-close-version]").forEach(
+  (element) => {
+    element.addEventListener(
+      "click",
+      closeVersionModal
+    );
+  }
+);
 
-qsa(
-  "[data-close-version]"
-)
-  .forEach(
-    (element) => {
+$("new-version")?.addEventListener(
+  "click",
+  () => {
+    openVersion();
+  }
+);
 
-      element.addEventListener(
-        "click",
-        closeVersionModal
-      );
-
-    }
-  );
-
-
-$("new-version")
-  ?.addEventListener(
-    "click",
-    () => {
-
-      openVersion();
-
-    }
-  );
-
-
-function openVersion(
-  id = null
-) {
-
-  state.editingVersion =
-    id;
+function openVersion(id = null) {
+  state.editingVersion = id;
 
   resetVersionForm();
 
   if ($("version-modal-title")) {
-
-    $("version-modal-title")
-      .textContent =
-        id
-          ? "Editar versión"
-          : "Nueva versión";
-
+    $("version-modal-title").textContent =
+      id
+        ? "Editar versión"
+        : "Nueva versión";
   }
 
   if (id) {
-
     const version =
       state.versions.find(
         (item) =>
@@ -2981,7 +2304,6 @@ function openVersion(
       );
 
     if (!version) {
-
       toast(
         "Versión no encontrada.",
         "error"
@@ -2991,38 +2313,30 @@ function openVersion(
     }
 
     $("v-name").value =
-      version.version_name ||
-      "";
+      version.version_name || "";
 
     $("v-code").value =
-      version.version_code ??
-      "";
+      version.version_code ?? "";
 
     $("v-min").value =
-      version.min_version_code ??
-      "";
+      version.min_version_code ?? "";
 
     $("v-url").value =
-      version.download_url ||
-      "";
+      version.download_url || "";
 
     $("v-changelog").value =
-      version.changelog ||
-      "";
+      version.changelog || "";
 
     $("v-required").checked =
-      version.is_mandatory ===
-      true;
+      version.is_mandatory === true;
 
     $("v-active").checked =
-      version.is_active !==
-      false;
+      version.is_active !== false;
   }
 
-  versionModal
-    ?.classList.remove(
-      "hidden"
-    );
+  versionModal?.classList.remove(
+    "hidden"
+  );
 }
 
 
@@ -3030,225 +2344,190 @@ function openVersion(
 // VERSION SAVE
 // ============================================================
 
-$("version-form")
-  ?.addEventListener(
-    "submit",
-    async (event) => {
+$("version-form")?.addEventListener(
+  "submit",
+  async (event) => {
+    event.preventDefault();
 
-      event.preventDefault();
+    const status =
+      $("version-status");
 
-      const status =
-        $("version-status");
+    const {
+      data: {
+        user
+      }
+    } =
+      await supabase.auth.getUser();
 
-      const {
-        data: {
-          user
-        }
-      } =
-        await supabase.auth
-          .getUser();
-
-      if (!user) {
-
-        if (status) {
-
-          status.textContent =
-            "La sesión administrativa expiró.";
-
-        }
-
-        return;
+    if (!user) {
+      if (status) {
+        status.textContent =
+          "La sesión administrativa expiró.";
       }
 
-      const versionName =
-        $("v-name")
-          ?.value
-          .trim();
+      return;
+    }
 
-      const versionCode =
-        Number(
-          $("v-code")
-            ?.value
-        );
+    const versionName =
+      $("v-name")
+        ?.value
+        .trim();
 
-      const minVersionCode =
-        Number(
-          $("v-min")
-            ?.value
-        );
+    const versionCode =
+      Number(
+        $("v-code")?.value
+      );
 
-      const downloadUrl =
-        $("v-url")
-          ?.value
-          .trim();
+    const minVersionCode =
+      Number(
+        $("v-min")?.value
+      );
 
-      const changelog =
-        $("v-changelog")
-          ?.value
-          .trim();
+    const downloadUrl =
+      $("v-url")
+        ?.value
+        .trim();
 
-      const isMandatory =
-        $("v-required")
-          ?.checked === true;
+    const changelog =
+      $("v-changelog")
+        ?.value
+        .trim();
 
-      const isActive =
-        $("v-active")
-          ?.checked !== false;
+    const isMandatory =
+      $("v-required")
+        ?.checked === true;
 
-      if (
-        !versionName ||
-        !Number.isFinite(
-          versionCode
-        ) ||
-        !Number.isFinite(
-          minVersionCode
-        ) ||
-        !downloadUrl
-      ) {
+    const isActive =
+      $("v-active")
+        ?.checked !== false;
 
-        if (status) {
+    if (
+      !versionName ||
+      !Number.isFinite(versionCode) ||
+      !Number.isFinite(minVersionCode) ||
+      !downloadUrl
+    ) {
+      if (status) {
+        status.textContent =
+          "Completa todos los campos obligatorios.";
+      }
 
-          status.textContent =
-            "Completa todos los campos obligatorios.";
+      toast(
+        "Faltan datos de la versión.",
+        "error"
+      );
 
+      return;
+    }
+
+    if (status) {
+      status.textContent =
+        "Guardando versión…";
+    }
+
+    const payload = {
+      version_name:
+        versionName,
+
+      version_code:
+        versionCode,
+
+      min_version_code:
+        minVersionCode,
+
+      download_url:
+        downloadUrl,
+
+      changelog:
+        changelog || null,
+
+      platform:
+        "android",
+
+      is_active:
+        isActive,
+
+      is_mandatory:
+        isMandatory
+    };
+
+    try {
+      if (state.editingVersion) {
+        const {
+          error
+        } =
+          await supabase
+            .from("app_versions")
+            .update(payload)
+            .eq(
+              "id",
+              state.editingVersion
+            );
+
+        if (error) {
+          throw error;
         }
 
-        toast(
-          "Faltan datos de la versión.",
-          "error"
+      } else {
+        const {
+          error
+        } =
+          await supabase
+            .from("app_versions")
+            .insert(payload);
+
+        if (error) {
+          throw error;
+        }
+      }
+
+      const wasEditing =
+        Boolean(
+          state.editingVersion
         );
 
-        return;
-      }
+      closeVersionModal();
+
+      await loadVersions();
+      await loadOverview();
+
+      toast(
+        wasEditing
+          ? "Versión actualizada."
+          : "Versión publicada.",
+        "success"
+      );
+
+    } catch (error) {
+      console.error(
+        "VERSION SAVE ERROR:",
+        error
+      );
 
       if (status) {
-
         status.textContent =
-          "Guardando versión…";
-
+          "No se pudo guardar. Revisa las políticas RLS.";
       }
 
-      const payload = {
-
-        version_name:
-          versionName,
-
-        version_code:
-          versionCode,
-
-        min_version_code:
-          minVersionCode,
-
-        download_url:
-          downloadUrl,
-
-        changelog:
-          changelog || null,
-
-        platform:
-          "android",
-
-        is_active:
-          isActive,
-
-        is_mandatory:
-          isMandatory
-
-      };
-
-      try {
-
-        if (
-          state.editingVersion
-        ) {
-
-          const {
-            error
-          } =
-            await supabase
-              .from("app_versions")
-              .update(payload)
-              .eq(
-                "id",
-                state.editingVersion
-              );
-
-          if (error) {
-            throw error;
-          }
-
-        } else {
-
-          const {
-            error
-          } =
-            await supabase
-              .from("app_versions")
-              .insert(
-                payload
-              );
-
-          if (error) {
-            throw error;
-          }
-        }
-
-        const wasEditing =
-          Boolean(
-            state.editingVersion
-          );
-
-        closeVersionModal();
-
-        await loadVersions();
-
-        await loadOverview();
-
-        toast(
-          wasEditing
-            ? "Versión actualizada."
-            : "Versión publicada.",
-          "success"
-        );
-
-      } catch (error) {
-
-        console.error(
-          "VERSION SAVE ERROR:",
-          error
-        );
-
-        if (status) {
-
-          status.textContent =
-            "No se pudo guardar. Revisa las políticas RLS.";
-
-        }
-
-        toast(
-          "Error al guardar la versión.",
-          "error"
-        );
-      }
+      toast(
+        "Error al guardar la versión.",
+        "error"
+      );
     }
-  );
+  }
+);
 
 
 // ============================================================
-// REMOTE ANNOUNCEMENTS
+// REMOTE ANNOUNCEMENTS UI
 // ============================================================
 
 function ensureAnnouncementUI() {
-
   const nav =
-    document.querySelector(
-      ".main-nav"
-    );
+    document.querySelector(".main-nav");
 
   const content =
-    document.querySelector(
-      ".content"
-    );
+    document.querySelector(".content");
 
   if (!nav || !content) {
     return;
@@ -3259,20 +2538,13 @@ function ensureAnnouncementUI() {
       '[data-view="announcements"]'
     )
   ) {
-
     const button =
-      document.createElement(
-        "button"
-      );
+      document.createElement("button");
 
-    button.className =
-      "nav-item";
-
+    button.className = "nav-item";
     button.dataset.view =
       "announcements";
-
-    button.type =
-      "button";
+    button.type = "button";
 
     button.innerHTML =
       `<span>!</span> Avisos`;
@@ -3280,28 +2552,17 @@ function ensureAnnouncementUI() {
     button.addEventListener(
       "click",
       () =>
-        view(
-          "announcements"
-        )
+        view("announcements")
     );
 
-    nav.appendChild(
-      button
-    );
+    nav.appendChild(button);
   }
 
-  if (
-    !$("view-announcements")
-  ) {
-
+  if (!$("view-announcements")) {
     const section =
-      document.createElement(
-        "div"
-      );
+      document.createElement("div");
 
-    section.className =
-      "view";
-
+    section.className = "view";
     section.id =
       "view-announcements";
 
@@ -3309,7 +2570,6 @@ function ensureAnnouncementUI() {
       <div class="welcome-row">
 
         <div>
-
           <p class="eyebrow">
             REMOTE CONTROL
           </p>
@@ -3321,7 +2581,6 @@ function ensureAnnouncementUI() {
           <p class="muted">
             Mensajes remotos que DashCore puede consultar cuando tenga conexión.
           </p>
-
         </div>
 
         <button
@@ -3345,19 +2604,12 @@ function ensureAnnouncementUI() {
       ></div>
     `;
 
-    content.appendChild(
-      section
-    );
+    content.appendChild(section);
   }
 
-  if (
-    !$("announcement-modal")
-  ) {
-
+  if (!$("announcement-modal")) {
     const modal =
-      document.createElement(
-        "div"
-      );
+      document.createElement("div");
 
     modal.className =
       "modal hidden";
@@ -3475,45 +2727,38 @@ function ensureAnnouncementUI() {
       </div>
     `;
 
-    document.body.appendChild(
-      modal
-    );
+    document.body.appendChild(modal);
   }
 
-  $("new-announcement")
-    ?.addEventListener(
-      "click",
-      () =>
-        openAnnouncement()
-    );
+  $("new-announcement")?.addEventListener(
+    "click",
+    () => openAnnouncement()
+  );
 
   qsa(
     "[data-close-announcement]"
-  )
-    .forEach(
-      (el) =>
-        el.addEventListener(
-          "click",
-          closeAnnouncement
-        )
+  ).forEach((el) => {
+    el.addEventListener(
+      "click",
+      closeAnnouncement
     );
+  });
 
-  $("announcement-form")
-    ?.addEventListener(
-      "submit",
-      saveAnnouncement
-    );
+  $("announcement-form")?.addEventListener(
+    "submit",
+    saveAnnouncement
+  );
 }
 
 
-function openAnnouncement(
-  id = null
-) {
+// ============================================================
+// ANNOUNCEMENT OPEN
+// ============================================================
 
+function openAnnouncement(id = null) {
   ensureAnnouncementUI();
 
-  state.editingAnnouncement =
-    id;
+  state.editingAnnouncement = id;
 
   const item =
     state.announcements.find(
@@ -3528,8 +2773,7 @@ function openAnnouncement(
         ? "Editar aviso"
         : "Nuevo aviso";
 
-  $("announcement-form")
-    ?.reset();
+  $("announcement-form")?.reset();
 
   $("a-active").checked =
     item
@@ -3537,26 +2781,18 @@ function openAnnouncement(
       : true;
 
   $("a-title").value =
-    item?.title ||
-    "";
+    item?.title || "";
 
   $("a-message").value =
-    item?.message ||
-    "";
+    item?.message || "";
 
   if (item?.expires_at) {
-
     const d =
       new Date(
         item.expires_at
       );
 
-    if (
-      !Number.isNaN(
-        d.getTime()
-      )
-    ) {
-
+    if (!Number.isNaN(d.getTime())) {
       $("a-expires").value =
         new Date(
           d.getTime() -
@@ -3564,39 +2800,30 @@ function openAnnouncement(
             60000
         )
           .toISOString()
-          .slice(
-            0,
-            16
-          );
-
+          .slice(0, 16);
     }
   }
 
   $("announcement-status")
-    .textContent =
-      "";
+    .textContent = "";
 
   $("announcement-modal")
-    ?.classList.remove(
-      "hidden"
-    );
+    ?.classList.remove("hidden");
 }
-
 
 function closeAnnouncement() {
-
   $("announcement-modal")
-    ?.classList.add(
-      "hidden"
-    );
+    ?.classList.add("hidden");
 
-  state.editingAnnouncement =
-    null;
+  state.editingAnnouncement = null;
 }
 
 
-async function loadAnnouncements() {
+// ============================================================
+// LOAD ANNOUNCEMENTS
+// ============================================================
 
+async function loadAnnouncements() {
   ensureAnnouncementUI();
 
   const root =
@@ -3606,23 +2833,32 @@ async function loadAnnouncements() {
     return;
   }
 
-  const {
-    data,
-    error
-  } =
-    await supabase
-      .from("remote_announcements")
-      .select("*")
-      .order(
-        "published_at",
-        {
-          ascending: false
-        }
-      )
-      .limit(50);
+  try {
+    const {
+      data,
+      error
+    } =
+      await supabase
+        .from("remote_announcements")
+        .select("*")
+        .order(
+          "published_at",
+          {
+            ascending: false
+          }
+        )
+        .limit(50);
 
-  if (error) {
+    if (error) {
+      throw error;
+    }
 
+    state.announcements =
+      data || [];
+
+    renderAnnouncements();
+
+  } catch (error) {
     console.error(
       "ANNOUNCEMENTS ERROR:",
       error
@@ -3634,21 +2870,15 @@ async function loadAnnouncements() {
         Revisa RLS y la tabla remote_announcements.
       </div>
     `;
-
-    return;
   }
-
-  state.announcements =
-    data || [];
-
-  renderAnnouncements();
 }
 
 
-function isAnnouncementCurrentlyActive(
-  item
-) {
+// ============================================================
+// ANNOUNCEMENT STATUS
+// ============================================================
 
+function isAnnouncementCurrentlyActive(item) {
   if (
     !item ||
     item.is_active === false
@@ -3656,9 +2886,7 @@ function isAnnouncementCurrentlyActive(
     return false;
   }
 
-  if (
-    !item.expires_at
-  ) {
+  if (!item.expires_at) {
     return true;
   }
 
@@ -3674,8 +2902,11 @@ function isAnnouncementCurrentlyActive(
 }
 
 
-function renderAnnouncements() {
+// ============================================================
+// RENDER ANNOUNCEMENTS
+// ============================================================
 
+function renderAnnouncements() {
   const activeRoot =
     $("announcement-active");
 
@@ -3692,51 +2923,47 @@ function renderAnnouncements() {
     );
 
   if (activeRoot) {
-
     activeRoot.innerHTML =
       active
         ? `
+          <article class="announcement-active-card">
 
-      <article class="announcement-active-card">
+            <div>
 
-        <div>
+              <span class="announcement-badge">
+                ACTIVO
+              </span>
 
-          <span class="announcement-badge">
-            ACTIVO
-          </span>
+              <h3>
+                ${esc(active.title)}
+              </h3>
 
-          <h3>
-            ${esc(active.title)}
-          </h3>
+              <p>
+                ${esc(active.message)}
+              </p>
 
-          <p>
-            ${esc(active.message)}
-          </p>
+            </div>
 
-        </div>
+            <button
+              class="ghost-btn"
+              data-edit-announcement="${esc(
+                active.id
+              )}"
+              type="button"
+            >
+              Editar
+            </button>
 
-        <button
-          class="ghost-btn"
-          data-edit-announcement="${esc(active.id)}"
-          type="button"
-        >
-          Editar
-        </button>
-
-      </article>
-
-    `
+          </article>
+        `
         : `
-      <div class="announcement-empty">
-        No hay ningún aviso activo.
-      </div>
-    `;
+          <div class="announcement-empty">
+            No hay ningún aviso activo.
+          </div>
+        `;
   }
 
-  if (
-    !state.announcements.length
-  ) {
-
+  if (!state.announcements.length) {
     root.innerHTML = `
       <div class="empty-state">
         No hay avisos creados.
@@ -3748,183 +2975,172 @@ function renderAnnouncements() {
 
   root.innerHTML =
     state.announcements
-      .map(
-        (item) => {
+      .map((item) => {
+        const activeNow =
+          isAnnouncementCurrentlyActive(
+            item
+          );
 
-          const activeNow =
-            isAnnouncementCurrentlyActive(
-              item
-            );
+        const expired =
+          item.expires_at &&
+          new Date(
+            item.expires_at
+          ).getTime() <=
+            Date.now();
 
-          const expired =
-            item.expires_at &&
-            new Date(
-              item.expires_at
-            ).getTime() <=
-              Date.now();
+        return `
+          <article class="announcement-card">
 
-          return `
-      <article class="announcement-card">
+            <div class="announcement-card-main">
 
-        <div class="announcement-card-main">
+              <div class="announcement-card-top">
 
-          <div class="announcement-card-top">
+                <strong>
+                  ${esc(
+                    item.title ||
+                    "Sin título"
+                  )}
+                </strong>
 
-            <strong>
-              ${esc(
-                item.title ||
-                "Sin título"
-              )}
-            </strong>
+                <span
+                  class="announcement-status ${
+                    activeNow
+                      ? "success"
+                      : expired
+                        ? "expired"
+                        : ""
+                  }"
+                >
+                  ${
+                    activeNow
+                      ? "ACTIVO"
+                      : expired
+                        ? "EXPIRADO"
+                        : "INACTIVO"
+                  }
+                </span>
 
-            <span
-              class="announcement-status ${
-                activeNow
-                  ? "success"
-                  : expired
-                    ? "expired"
+              </div>
+
+              <p>
+                ${esc(
+                  item.message || ""
+                )}
+              </p>
+
+              <small>
+                Publicado:
+                ${esc(
+                  fmt(
+                    item.published_at
+                  )
+                )}
+
+                ${
+                  item.expires_at
+                    ? ` · Expira: ${esc(
+                        fmt(
+                          item.expires_at
+                        )
+                      )}`
                     : ""
-              }"
-            >
-              ${
-                activeNow
-                  ? "ACTIVO"
-                  : expired
-                    ? "EXPIRADO"
-                    : "INACTIVO"
-              }
-            </span>
+                }
+              </small>
 
-          </div>
+            </div>
 
-          <p>
-            ${esc(
-              item.message ||
-              ""
-            )}
-          </p>
+            <div class="announcement-actions">
 
-          <small>
-            Publicado:
-            ${esc(
-              fmt(
-                item.published_at
-              )
-            )}
+              <button
+                class="ghost-btn edit-announcement"
+                data-id="${esc(item.id)}"
+                type="button"
+              >
+                Editar
+              </button>
 
-            ${
-              item.expires_at
-                ? ` · Expira: ${esc(
-                    fmt(
-                      item.expires_at
-                    )
-                  )}`
-                : ""
-            }
-          </small>
+              <button
+                class="ghost-btn toggle-announcement"
+                data-id="${esc(item.id)}"
+                type="button"
+              >
+                ${
+                  item.is_active === false
+                    ? "Activar"
+                    : "Desactivar"
+                }
+              </button>
 
-        </div>
+              <button
+                class="danger-btn delete-announcement"
+                data-id="${esc(item.id)}"
+                type="button"
+              >
+                Eliminar
+              </button>
 
-        <div class="announcement-actions">
+            </div>
 
-          <button
-            class="ghost-btn edit-announcement"
-            data-id="${esc(item.id)}"
-            type="button"
-          >
-            Editar
-          </button>
-
-          <button
-            class="ghost-btn toggle-announcement"
-            data-id="${esc(item.id)}"
-            type="button"
-          >
-            ${
-              item.is_active === false
-                ? "Activar"
-                : "Desactivar"
-            }
-          </button>
-
-          <button
-            class="danger-btn delete-announcement"
-            data-id="${esc(item.id)}"
-            type="button"
-          >
-            Eliminar
-          </button>
-
-        </div>
-
-      </article>
-    `;
-        }
-      )
+          </article>
+        `;
+      })
       .join("");
 
-  qsa(
-    ".edit-announcement"
-  )
-    .forEach(
-      (b) =>
-        b.addEventListener(
-          "click",
-          () =>
-            openAnnouncement(
-              b.dataset.id
-            )
-        )
-    );
+  qsa(".edit-announcement").forEach(
+    (b) => {
+      b.addEventListener(
+        "click",
+        () =>
+          openAnnouncement(
+            b.dataset.id
+          )
+      );
+    }
+  );
 
-  qsa(
-    "[data-edit-announcement]"
-  )
-    .forEach(
-      (b) =>
-        b.addEventListener(
-          "click",
-          () =>
-            openAnnouncement(
-              b.dataset.editAnnouncement
-            )
-        )
-    );
+  qsa("[data-edit-announcement]").forEach(
+    (b) => {
+      b.addEventListener(
+        "click",
+        () =>
+          openAnnouncement(
+            b.dataset.editAnnouncement
+          )
+      );
+    }
+  );
 
-  qsa(
-    ".toggle-announcement"
-  )
-    .forEach(
-      (b) =>
-        b.addEventListener(
-          "click",
-          () =>
-            toggleAnnouncement(
-              b.dataset.id
-            )
-        )
-    );
+  qsa(".toggle-announcement").forEach(
+    (b) => {
+      b.addEventListener(
+        "click",
+        () =>
+          toggleAnnouncement(
+            b.dataset.id
+          )
+      );
+    }
+  );
 
-  qsa(
-    ".delete-announcement"
-  )
-    .forEach(
-      (b) =>
-        b.addEventListener(
-          "click",
-          () =>
-            deleteAnnouncement(
-              b.dataset.id
-            )
-        )
-    );
+  qsa(".delete-announcement").forEach(
+    (b) => {
+      b.addEventListener(
+        "click",
+        () =>
+          deleteAnnouncement(
+            b.dataset.id
+          )
+      );
+    }
+  );
 }
 
 
-async function saveAnnouncement(
-  event
-) {
+// ============================================================
+// SAVE ANNOUNCEMENT
+// ============================================================
 
+async function saveAnnouncement(event) {
   event.preventDefault();
 
   const status =
@@ -3941,43 +3157,30 @@ async function saveAnnouncement(
       .trim();
 
   const expiresRaw =
-    $("a-expires")
-      ?.value;
+    $("a-expires")?.value;
 
   const isActive =
     $("a-active")
       ?.checked !== false;
 
-  if (
-    !title ||
-    !message
-  ) {
-
+  if (!title || !message) {
     if (status) {
-
       status.textContent =
         "Completa título y mensaje.";
-
     }
 
     return;
   }
 
   if (status) {
-
     status.textContent =
       "Guardando aviso…";
-
   }
 
   const payload = {
-
     title,
-
     message,
-
-    is_active:
-      isActive,
+    is_active: isActive,
 
     expires_at:
       expiresRaw
@@ -3990,14 +3193,11 @@ async function saveAnnouncement(
       new Date().toISOString(),
 
     metadata: {
-      source:
-        "admin"
+      source: "admin"
     }
-
   };
 
   try {
-
     const wasEditing =
       Boolean(
         state.editingAnnouncement
@@ -4005,10 +3205,7 @@ async function saveAnnouncement(
 
     let error;
 
-    if (
-      state.editingAnnouncement
-    ) {
-
+    if (state.editingAnnouncement) {
       ({
         error
       } =
@@ -4016,16 +3213,13 @@ async function saveAnnouncement(
           .from(
             "remote_announcements"
           )
-          .update(
-            payload
-          )
+          .update(payload)
           .eq(
             "id",
             state.editingAnnouncement
           ));
 
     } else {
-
       ({
         error
       } =
@@ -4033,9 +3227,7 @@ async function saveAnnouncement(
           .from(
             "remote_announcements"
           )
-          .insert(
-            payload
-          ));
+          .insert(payload));
     }
 
     if (error) {
@@ -4045,6 +3237,7 @@ async function saveAnnouncement(
     closeAnnouncement();
 
     await loadAnnouncements();
+    await loadOverview();
 
     toast(
       wasEditing
@@ -4054,17 +3247,14 @@ async function saveAnnouncement(
     );
 
   } catch (error) {
-
     console.error(
       "ANNOUNCEMENT SAVE ERROR:",
       error
     );
 
     if (status) {
-
       status.textContent =
         "No se pudo guardar. Revisa RLS y permisos de admin.";
-
     }
 
     toast(
@@ -4075,10 +3265,11 @@ async function saveAnnouncement(
 }
 
 
-async function toggleAnnouncement(
-  id
-) {
+// ============================================================
+// TOGGLE ANNOUNCEMENT
+// ============================================================
 
+async function toggleAnnouncement(id) {
   const item =
     state.announcements.find(
       (x) =>
@@ -4094,9 +3285,7 @@ async function toggleAnnouncement(
     error
   } =
     await supabase
-      .from(
-        "remote_announcements"
-      )
+      .from("remote_announcements")
       .update({
         is_active:
           item.is_active === false
@@ -4107,7 +3296,6 @@ async function toggleAnnouncement(
       );
 
   if (error) {
-
     console.error(
       "ANNOUNCEMENT TOGGLE ERROR:",
       error
@@ -4122,6 +3310,7 @@ async function toggleAnnouncement(
   }
 
   await loadAnnouncements();
+  await loadOverview();
 
   toast(
     item.is_active === false
@@ -4132,10 +3321,11 @@ async function toggleAnnouncement(
 }
 
 
-async function deleteAnnouncement(
-  id
-) {
+// ============================================================
+// DELETE ANNOUNCEMENT
+// ============================================================
 
+async function deleteAnnouncement(id) {
   if (
     !window.confirm(
       "¿Eliminar este aviso?"
@@ -4148,9 +3338,7 @@ async function deleteAnnouncement(
     error
   } =
     await supabase
-      .from(
-        "remote_announcements"
-      )
+      .from("remote_announcements")
       .delete()
       .eq(
         "id",
@@ -4158,7 +3346,6 @@ async function deleteAnnouncement(
       );
 
   if (error) {
-
     console.error(
       "ANNOUNCEMENT DELETE ERROR:",
       error
@@ -4173,6 +3360,7 @@ async function deleteAnnouncement(
   }
 
   await loadAnnouncements();
+  await loadOverview();
 
   toast(
     "Aviso eliminado.",
@@ -4181,11 +3369,12 @@ async function deleteAnnouncement(
 }
 
 
-function startAnnouncementRealtime() {
+// ============================================================
+// REALTIME ANNOUNCEMENTS
+// ============================================================
 
-  if (
-    state.announcementChannel
-  ) {
+function startAnnouncementRealtime() {
+  if (state.announcementChannel) {
     return;
   }
 
@@ -4202,34 +3391,27 @@ function startAnnouncementRealtime() {
           table:
             "remote_announcements"
         },
-        () =>
-          loadAnnouncements()
+        () => {
+          loadAnnouncements();
+          loadOverview();
+        }
       )
       .subscribe(
         (status) => {
-
           if (
-            status ===
-            "SUBSCRIBED"
+            status === "SUBSCRIBED"
           ) {
-
             setConnectionState(
               true,
               "Supabase conectado"
             );
-
           }
-
         }
       );
 }
 
-
 async function stopAnnouncementRealtime() {
-
-  if (
-    !state.announcementChannel
-  ) {
+  if (!state.announcementChannel) {
     return;
   }
 
@@ -4242,11 +3424,14 @@ async function stopAnnouncementRealtime() {
 }
 
 
+// ============================================================
+// CONNECTION STATE
+// ============================================================
+
 function setConnectionState(
   online,
   label = "Supabase"
 ) {
-
   const pill =
     document.querySelector(
       ".connection-pill"
@@ -4265,7 +3450,6 @@ function setConnectionState(
     `<span></span>${esc(label)}`;
 }
 
-
 window.addEventListener(
   "online",
   () =>
@@ -4274,7 +3458,6 @@ window.addEventListener(
       "Supabase conectado"
     )
 );
-
 
 window.addEventListener(
   "offline",
@@ -4286,8 +3469,11 @@ window.addEventListener(
 );
 
 
-ensureAnnouncementUI();
+// ============================================================
+// INITIALIZATION
+// ============================================================
 
+ensureAnnouncementUI();
 
 setConnectionState(
   navigator.onLine,
@@ -4304,35 +3490,28 @@ setConnectionState(
 document.addEventListener(
   "keydown",
   (event) => {
+    if (event.key !== "Escape") {
+      return;
+    }
+
+    closeMobileMenu();
 
     if (
-      event.key ===
-      "Escape"
+      !versionModal
+        ?.classList.contains(
+          "hidden"
+        )
     ) {
+      closeVersionModal();
+    }
 
-      closeMobileMenu();
-
-      if (
-        !versionModal
-          ?.classList.contains(
-            "hidden"
-          )
-      ) {
-
-        closeVersionModal();
-
-      }
-
-      if (
-        !$("announcement-modal")
-          ?.classList.contains(
-            "hidden"
-          )
-      ) {
-
-        closeAnnouncement();
-
-      }
+    if (
+      !$("announcement-modal")
+        ?.classList.contains(
+          "hidden"
+        )
+    ) {
+      closeAnnouncement();
     }
   }
 );
@@ -4342,9 +3521,7 @@ document.addEventListener(
 // INITIAL VIEW
 // ============================================================
 
-view(
-  "overview"
-);
+view("overview");
 
 
 // ============================================================
@@ -4354,29 +3531,28 @@ view(
 window.addEventListener(
   "unhandledrejection",
   (event) => {
-
     console.error(
       "UNHANDLED PROMISE:",
       event.reason
     );
-
   }
 );
-
 
 window.addEventListener(
   "error",
   (event) => {
-
     console.error(
       "GLOBAL ERROR:",
       event.error ||
       event.message
     );
-
   }
 );
 
+
+// ============================================================
+// DEBUG
+// ============================================================
 
 window.adminSupabase =
   supabase;
