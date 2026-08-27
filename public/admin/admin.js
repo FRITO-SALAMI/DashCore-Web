@@ -1164,14 +1164,15 @@ async function loadOverview() {
     const [
       usersResult,
       stylesResult,
-      versionsResult
+      versionsResult,
+      announcementsResult
     ] =
       await Promise.all([
 
         supabase
           .from("app_users")
           .select(
-            "id,username,updated_at"
+            "id,username,created_at,updated_at"
           ),
 
         supabase
@@ -1183,15 +1184,34 @@ async function loadOverview() {
         supabase
           .from("app_versions")
           .select(
-            "version_name,version_code,is_active"
+            "id,version_name,version_code,is_active"
           )
           .order(
             "version_code",
             {
               ascending: false
             }
+          ),
+
+        supabase
+          .from("remote_announcements")
+          .select(
+            "id,title,message,is_active,published_at,expires_at"
           )
+          .order(
+            "published_at",
+            {
+              ascending: false
+            }
+          )
+          .limit(50)
+
       ]);
+
+
+    // ========================================================
+    // VALIDACIÓN DE ERRORES
+    // ========================================================
 
     if (usersResult.error) {
       throw usersResult.error;
@@ -1205,17 +1225,31 @@ async function loadOverview() {
       throw versionsResult.error;
     }
 
+    if (announcementsResult.error) {
+      throw announcementsResult.error;
+    }
+
+
+    // ========================================================
+    // DATA
+    // ========================================================
+
     const users =
-      usersResult.data ||
-      [];
+      usersResult.data || [];
 
     const styles =
-      stylesResult.data ||
-      [];
+      stylesResult.data || [];
 
     const versions =
-      versionsResult.data ||
-      [];
+      versionsResult.data || [];
+
+    const announcements =
+      announcementsResult.data || [];
+
+
+    // ========================================================
+    // ESTILOS
+    // ========================================================
 
     const styleCounts = {};
 
@@ -1231,8 +1265,14 @@ async function loadOverview() {
             styleCounts[id] ||
             0
           ) + 1;
+
       }
     );
+
+
+    // ========================================================
+    // VERSIONES
+    // ========================================================
 
     const versionCounts = {};
 
@@ -1251,14 +1291,136 @@ async function loadOverview() {
             versionCounts[name] ||
             0
           ) + 1;
+
       }
     );
+
 
     const activeVersions =
       versions.filter(
         (item) =>
           item.is_active !== false
       );
+
+
+    // ========================================================
+    // AVISOS
+    // ========================================================
+
+    const now =
+      Date.now();
+
+    const activeAnnouncements =
+      announcements.filter(
+        (item) => {
+
+          if (
+            item.is_active === false
+          ) {
+            return false;
+          }
+
+          if (
+            !item.expires_at
+          ) {
+            return true;
+          }
+
+          const expiration =
+            new Date(
+              item.expires_at
+            ).getTime();
+
+          return (
+            !Number.isNaN(
+              expiration
+            ) &&
+            expiration > now
+          );
+
+        }
+      );
+
+
+    // ========================================================
+    // REGISTROS ÚLTIMOS 30 DÍAS
+    // ========================================================
+
+    const thirtyDaysAgo =
+      Date.now() -
+      (
+        30 *
+        24 *
+        60 *
+        60 *
+        1000
+      );
+
+
+    const recentRegistrations =
+      users.filter(
+        (user) => {
+
+          const created =
+            user.created_at;
+
+          if (!created) {
+            return false;
+          }
+
+          const time =
+            new Date(
+              created
+            ).getTime();
+
+          return (
+            !Number.isNaN(time) &&
+            time >= thirtyDaysAgo
+          );
+
+        }
+      );
+
+
+    // ========================================================
+    // USUARIOS ACTIVOS
+    // ========================================================
+
+    const activeUsers =
+      users.filter(
+        (user) => {
+
+          if (
+            !user.updated_at
+          ) {
+            return false;
+          }
+
+          const updated =
+            new Date(
+              user.updated_at
+            ).getTime();
+
+          if (
+            Number.isNaN(updated)
+          ) {
+            return false;
+          }
+
+          // Consideramos activo si tuvo actividad
+          // durante los últimos 30 días.
+          return (
+            updated >=
+            thirtyDaysAgo
+          );
+
+        }
+      );
+
+
+    // ========================================================
+    // STATS
+    // ========================================================
 
     if ($("stat-users")) {
 
@@ -1270,26 +1432,28 @@ async function loadOverview() {
 
     }
 
+
     if ($("stat-active")) {
 
       $("stat-active")
         .textContent =
           num(
-            users.filter(
-              (item) =>
-                item.updated_at
-            ).length
+            activeUsers.length
           );
 
     }
+
 
     if ($("stat-registrations")) {
 
       $("stat-registrations")
         .textContent =
-          "—";
+          num(
+            recentRegistrations.length
+          );
 
     }
+
 
     if ($("stat-versions")) {
 
@@ -1301,27 +1465,139 @@ async function loadOverview() {
 
     }
 
+
+    // ========================================================
+    // SI EXISTE UNA TARJETA PARA AVISOS
+    // ========================================================
+
+    if ($("stat-announcements")) {
+
+      $("stat-announcements")
+        .textContent =
+          num(
+            activeAnnouncements.length
+          );
+
+    }
+
+
+    // ========================================================
+    // AVISO ACTIVO EN RESUMEN
+    // ========================================================
+
+    const overviewAnnouncement =
+      $("overview-announcement");
+
+
+    if (overviewAnnouncement) {
+
+      const latestActive =
+        activeAnnouncements[0];
+
+      if (latestActive) {
+
+        overviewAnnouncement.innerHTML = `
+
+          <div class="overview-announcement-card">
+
+            <span class="announcement-badge">
+              AVISO ACTIVO
+            </span>
+
+            <h3>
+              ${esc(
+                latestActive.title ||
+                "Sin título"
+              )}
+            </h3>
+
+            <p>
+              ${esc(
+                latestActive.message ||
+                ""
+              )}
+            </p>
+
+            <small>
+              Publicado:
+              ${esc(
+                fmt(
+                  latestActive.published_at
+                )
+              )}
+            </small>
+
+          </div>
+
+        `;
+
+      } else {
+
+        overviewAnnouncement.innerHTML = `
+
+          <div class="empty-state">
+            No hay avisos activos.
+          </div>
+
+        `;
+
+      }
+
+    }
+
+
+    // ========================================================
+    // GRÁFICA DE VERSIONES
+    // ========================================================
+
     renderRanks(
       "version-chart",
       versionCounts,
       true
     );
 
+
+    // ========================================================
+    // ESTILOS UTILIZADOS
+    // ========================================================
+
     renderRanks(
       "style-chart",
       styleCounts
     );
+
+
+    // ========================================================
+    // UBICACIONES
+    // ========================================================
 
     renderRanks(
       "country-list",
       {}
     );
 
+
     renderRanks(
       "city-list",
       {}
-
     );
+
+
+    // ========================================================
+    // ACTUALIZAR AVISOS SI LA VISTA ESTÁ ABIERTA
+    // ========================================================
+
+    if (
+      $("view-announcements")
+    ) {
+
+      state.announcements =
+        announcements;
+
+      renderAnnouncements();
+
+    }
+
 
   } catch (error) {
 
@@ -1334,251 +1610,9 @@ async function loadOverview() {
       "No se pudo cargar el resumen.",
       "error"
     );
-  }
-}
 
-
-// ============================================================
-// USERS
-// ============================================================
-
-async function loadUsers(
-  reset = false
-) {
-
-  if (reset) {
-
-    state.userPage =
-      1;
-
-    state.userCursors =
-      [];
-
-    state.currentUserCursor =
-      null;
   }
 
-  try {
-
-    const {
-      data,
-      error,
-      count
-    } =
-      await supabase
-        .from("app_users")
-        .select(
-          "*",
-          {
-            count: "exact"
-          }
-        )
-        .order(
-          "updated_at",
-          {
-            ascending: false,
-            nullsFirst: false
-          }
-        )
-        .range(
-          (
-            state.userPage - 1
-          ) *
-            state.usersPageSize,
-
-          (
-            state.userPage *
-              state.usersPageSize
-          ) - 1
-        );
-
-    if (error) {
-      throw error;
-    }
-
-    const users =
-      data || [];
-
-    const ids =
-      users.map(
-        (item) =>
-          item.id
-      );
-
-    let settings = [];
-
-    let styles = [];
-
-    if (ids.length) {
-
-      const [
-        settingsResult,
-        stylesResult
-      ] =
-        await Promise.all([
-
-          supabase
-            .from("user_settings")
-            .select(
-              `
-              user_id,
-              selected_style,
-              accent_color,
-              temp_unit,
-              language,
-              background_path,
-              model_path,
-              updated_at
-              `
-            )
-            .in(
-              "user_id",
-              ids
-            ),
-
-          supabase
-            .from("user_styles")
-            .select(
-              `
-              user_id,
-              style_id,
-              unlocked_at
-              `
-            )
-            .in(
-              "user_id",
-              ids
-            )
-
-        ]);
-
-      if (
-        settingsResult.error
-      ) {
-        throw settingsResult.error;
-      }
-
-      if (
-        stylesResult.error
-      ) {
-        throw stylesResult.error;
-      }
-
-      settings =
-        settingsResult.data ||
-        [];
-
-      styles =
-        stylesResult.data ||
-        [];
-    }
-
-    const settingsMap =
-      new Map();
-
-    settings.forEach(
-      (item) => {
-
-        settingsMap.set(
-          item.user_id,
-          item
-        );
-      }
-    );
-
-    const stylesMap =
-      new Map();
-
-    styles.forEach(
-      (item) => {
-
-        if (
-          !stylesMap.has(
-            item.user_id
-          )
-        ) {
-
-          stylesMap.set(
-            item.user_id,
-            []
-          );
-        }
-
-        stylesMap
-          .get(item.user_id)
-          .push(
-            item.style_id
-          );
-      }
-    );
-
-    state.users =
-      users.map(
-        (user) => {
-
-          const setting =
-            settingsMap.get(
-              user.id
-            ) || {};
-
-          return {
-
-            ...user,
-
-            ...setting,
-
-            unlockedStyles:
-              stylesMap.get(
-                user.id
-              ) || []
-
-          };
-        }
-      );
-
-    renderUsers();
-
-    updateFilters();
-
-    if ($("users-page")) {
-
-      $("users-page")
-        .textContent =
-          state.userPage;
-    }
-
-    if ($("users-prev")) {
-
-      $("users-prev")
-        .disabled =
-          state.userPage <= 1;
-    }
-
-    if ($("users-next")) {
-
-      $("users-next")
-        .disabled =
-          (
-            state.userPage *
-              state.usersPageSize
-          ) >=
-          (
-            count || 0
-          );
-    }
-
-  } catch (error) {
-
-    console.error(
-      "USERS ERROR:",
-      error
-    );
-
-    toast(
-      "No se pudieron cargar los usuarios.",
-      "error"
-    );
-  }
 }
 
 
