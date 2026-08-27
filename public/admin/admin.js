@@ -3189,34 +3189,18 @@ $("version-form")?.addEventListener(
         "Guardando versión…";
     }
 
+const payload = {
+  title: versionName,
 
-    const payload = {
-
-      version_name:
-        versionName,
-
-      version_code:
-        versionCode,
-
-      min_version_code:
-        minVersionCode,
-
-      download_url:
-        downloadUrl,
-
-      changelog:
-        changelog || null,
-
-      platform:
-        "android",
-
-      is_active:
-        isActive,
-
-      is_mandatory:
-        isMandatory
-
-    };
+  version_name: versionName,
+  version_code: versionCode,
+  min_version_code: minVersionCode,
+  download_url: downloadUrl,
+  changelog: changelog || null,
+  platform: "android",
+  is_active: isActive,
+  is_mandatory: isMandatory
+};
 
 
     try {
@@ -3279,29 +3263,34 @@ $("version-form")?.addEventListener(
       );
 
 
-    } catch (error) {
+} catch (error) {
 
-      console.error(
-        "VERSION SAVE ERROR:",
-        error
-      );
+  console.error(
+    "VERSION SAVE ERROR:",
+    JSON.stringify(
+      {
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code
+      },
+      null,
+      2
+    )
+  );
 
-
-      if (status) {
-        status.textContent =
-          "No se pudo guardar. Revisa las políticas RLS.";
-      }
-
-
-      toast(
-        "Error al guardar la versión.",
-        "error"
-      );
-
-    }
-
+  if (status) {
+    status.textContent =
+      "No se pudo guardar. Revisa las políticas RLS.";
   }
-);
+
+  toast(
+    "Error al guardar la versión.",
+    "error"
+  );
+
+}
+});
 
 
 // ============================================================
@@ -4603,3 +4592,4 @@ window.addEventListener(
 
 window.adminSupabase =
   supabase;
+  
