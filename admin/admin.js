@@ -82,69 +82,6 @@ const fmt = (value) => {
 const safeArray = (value) =>
   Array.isArray(value) ? value : [];
 
-function parseLocation(value) {
-  if (!value) return null;
-
-  if (typeof value === "object") {
-    return value;
-  }
-
-  if (typeof value === "string") {
-    try {
-      const parsed = JSON.parse(value);
-      return parsed && typeof parsed === "object"
-        ? parsed
-        : null;
-    } catch {
-      return null;
-    }
-  }
-
-  return null;
-}
-
-function getLocationCity(value) {
-  const location = parseLocation(value);
-  if (!location) return null;
-
-  return (
-    location.city ||
-    location.city_name ||
-    location.locality ||
-    location.town ||
-    location.municipality ||
-    null
-  );
-}
-
-function getLocationCoordinates(value) {
-  const location = parseLocation(value);
-  if (!location) return null;
-
-  const lat = Number(
-    location.lat ?? location.latitude
-  );
-
-  const lng = Number(
-    location.lng ??
-    location.lon ??
-    location.longitude
-  );
-
-  if (
-    !Number.isFinite(lat) ||
-    !Number.isFinite(lng) ||
-    lat < -90 ||
-    lat > 90 ||
-    lng < -180 ||
-    lng > 180
-  ) {
-    return null;
-  }
-
-  return { lat, lng };
-}
-
 
 // ============================================================
 // STATE
@@ -165,10 +102,7 @@ const state = {
   editingVersion: null,
   initialized: false,
   loading: false,
-  announcementChannel: null,
-  announcementUIReady: false,
-  authCheckInProgress: false,
-  currentAdminId: null
+  announcementChannel: null
 };
 
 
@@ -326,26 +260,29 @@ $("mobile-overlay")?.addEventListener(
 // ============================================================
 
 async function isCurrentUserAdmin(userId) {
-  if (!userId) return false;
+  if (!userId) {
+    return false;
+  }
 
   const {
     data,
     error
-  } = await supabase.rpc("is_admin");
+  } = await supabase
+    .from("admin_users")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
 
   if (error) {
     console.error(
-      "ADMIN RPC ERROR:",
+      "ADMIN TABLE ERROR:",
       error
     );
+
     throw error;
   }
 
-  return (
-    data === true ||
-    data === "true" ||
-    data === 1
-  );
+  return Boolean(data);
 }
 
 
@@ -596,14 +533,9 @@ supabase.auth.onAuthStateChange(
 
 async function handleSession(session) {
   if (!session?.user) {
-    state.currentAdminId = null;
     showLogin();
     return;
   }
-
-  if (state.authCheckInProgress) return;
-
-  state.authCheckInProgress = true;
 
   try {
     const admin =
@@ -612,8 +544,6 @@ async function handleSession(session) {
       );
 
     if (!admin) {
-      state.currentAdminId = null;
-
       if ($("login-status")) {
         $("login-status").textContent =
           "Esta cuenta no tiene permisos de administrador.";
@@ -628,14 +558,13 @@ async function handleSession(session) {
       return;
     }
 
-    state.currentAdminId =
-      session.user.id;
-
     showApp(session.user);
+
     startAnnouncementRealtime();
 
     if (!state.initialized) {
       state.initialized = true;
+
       await loadAll();
 
       toast(
@@ -650,8 +579,6 @@ async function handleSession(session) {
       error
     );
 
-    state.currentAdminId = null;
-
     if ($("login-status")) {
       $("login-status").textContent =
         "No se pudo validar el administrador.";
@@ -662,17 +589,7 @@ async function handleSession(session) {
       "error"
     );
 
-    try {
-      await supabase.auth.signOut();
-    } catch (signOutError) {
-      console.error(
-        "AUTH SIGNOUT ERROR:",
-        signOutError
-      );
-    }
-
-  } finally {
-    state.authCheckInProgress = false;
+    await supabase.auth.signOut();
   }
 }
 
@@ -686,8 +603,6 @@ function showLogin() {
   $("app-view")?.classList.add("hidden");
 
   state.initialized = false;
-  state.currentAdminId = null;
-  state.authCheckInProgress = false;
 
   stopAnnouncementRealtime();
 }
@@ -1145,10 +1060,21 @@ async function loadOverview() {
     const cityCounts = {};
 
     users.forEach((user) => {
+      const location =
+        user.location_approx;
+
+      if (
+        !location ||
+        typeof location !== "object"
+      ) {
+        return;
+      }
+
       const city =
-        getLocationCity(
-          user.location_approx
-        );
+        location.city ||
+        location.city_name ||
+        location.locality ||
+        location.town;
 
       if (!city) {
         return;
@@ -1393,7 +1319,9 @@ async function loadUsers(reset = false) {
 
     if (next) {
       next.disabled =
-        state.userPage >= totalPages;
+        state.userPage >= totalPages ||
+        state.users.length <
+          state.usersPageSize;
     }
 
     const pageIndicator =
@@ -3021,37 +2949,6 @@ async function loadVersions() {
 }
 
 
-async function requireAdminSession() {
-  const {
-    data: {
-      user
-    } = {}
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error(
-      "ADMIN_SESSION_REQUIRED"
-    );
-  }
-
-  const admin =
-    await isCurrentUserAdmin(
-      user.id
-    );
-
-  if (!admin) {
-    throw new Error(
-      "ADMIN_ACCESS_DENIED"
-    );
-  }
-
-  state.currentAdminId =
-    user.id;
-
-  return user;
-}
-
-
 // ============================================================
 // VERSION MODAL
 // ============================================================
@@ -3204,23 +3101,21 @@ $("version-form")?.addEventListener(
     const status =
       $("version-status");
 
-    try {
-      await requireAdminSession();
-    } catch (error) {
-      console.error(
-        "VERSION ADMIN CHECK ERROR:",
-        error
-      );
+
+    const {
+      data: {
+        user
+      }
+    } =
+      await supabase.auth.getUser();
+
+
+    if (!user) {
 
       if (status) {
         status.textContent =
-          "La sesión administrativa expiró o no tiene permisos.";
+          "La sesión administrativa expiró.";
       }
-
-      toast(
-        "Sesión administrativa no válida.",
-        "error"
-      );
 
       return;
     }
@@ -3238,13 +3133,10 @@ $("version-form")?.addEventListener(
       );
 
 
-    const minVersionRaw =
-      $("v-min")?.value.trim();
-
     const minVersionCode =
-      minVersionRaw === ""
-        ? 0
-        : Number(minVersionRaw);
+      Number(
+        $("v-min")?.value
+      );
 
 
     const downloadUrl =
@@ -3258,6 +3150,11 @@ $("version-form")?.addEventListener(
         ?.value
         .trim();
 
+    // app_versions.title es NOT NULL y no tiene default.
+    // Se deriva automáticamente del nombre de la versión.
+    const title =
+      `DashCore ${versionName}`;
+
 
     const isMandatory =
       $("v-required")
@@ -3269,27 +3166,11 @@ $("version-form")?.addEventListener(
         ?.checked !== false;
 
 
-    let validDownloadUrl = false;
-
-    try {
-      const parsedUrl =
-        new URL(downloadUrl);
-
-      validDownloadUrl =
-        parsedUrl.protocol === "https:" ||
-        parsedUrl.protocol === "http:";
-    } catch {
-      validDownloadUrl = false;
-    }
-
     if (
       !versionName ||
       !Number.isFinite(versionCode) ||
       !Number.isFinite(minVersionCode) ||
-      minVersionCode < 0 ||
-      versionCode < 0 ||
-      !downloadUrl ||
-      !validDownloadUrl
+      !downloadUrl
     ) {
 
       if (status) {
@@ -3315,6 +3196,9 @@ $("version-form")?.addEventListener(
 
 
     const payload = {
+
+      title:
+        title,
 
       version_name:
         versionName,
@@ -3405,10 +3289,13 @@ $("version-form")?.addEventListener(
 
     } catch (error) {
 
-      console.error(
-        "VERSION SAVE ERROR:",
+      console.error("VERSION SAVE ERROR:", {
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code,
         error
-      );
+      });
 
 
       if (status) {
@@ -3433,9 +3320,6 @@ $("version-form")?.addEventListener(
 // ============================================================
 
 function ensureAnnouncementUI() {
-  if (state.announcementUIReady) {
-    return;
-  }
 
   const nav =
     document.querySelector(
@@ -3738,7 +3622,6 @@ function ensureAnnouncementUI() {
     saveAnnouncement
   );
 
-  state.announcementUIReady = true;
 }
 
 
@@ -3928,7 +3811,7 @@ function isAnnouncementCurrentlyActive(item) {
 
 
   return (
-    !Number.isNaN(expiry) &&
+    Number.isNaN(expiry) ||
     expiry > Date.now()
   );
 }
@@ -4288,16 +4171,14 @@ async function saveAnnouncement(event) {
           ).toISOString()
         : null,
 
+    published_at:
+      new Date().toISOString(),
+
     metadata: {
       source: "admin"
     }
 
   };
-
-  if (!state.editingAnnouncement) {
-    payload.published_at =
-      new Date().toISOString();
-  }
 
 
   try {
@@ -4393,22 +4274,6 @@ async function saveAnnouncement(event) {
 
 async function toggleAnnouncement(id) {
 
-  try {
-    await requireAdminSession();
-  } catch (error) {
-    console.error(
-      "ANNOUNCEMENT TOGGLE ADMIN CHECK ERROR:",
-      error
-    );
-
-    toast(
-      "Sesión administrativa no válida.",
-      "error"
-    );
-
-    return;
-  }
-
   const item =
     state.announcements.find(
       (x) =>
@@ -4473,22 +4338,6 @@ async function toggleAnnouncement(id) {
 // ============================================================
 
 async function deleteAnnouncement(id) {
-
-  try {
-    await requireAdminSession();
-  } catch (error) {
-    console.error(
-      "ANNOUNCEMENT DELETE ADMIN CHECK ERROR:",
-      error
-    );
-
-    toast(
-      "Sesión administrativa no válida.",
-      "error"
-    );
-
-    return;
-  }
 
   if (
     !window.confirm(
@@ -4580,23 +4429,12 @@ function startAnnouncementRealtime() {
             status ===
             "SUBSCRIBED"
           ) {
+
             setConnectionState(
               true,
               "Supabase conectado"
             );
-            return;
-          }
 
-          if (
-            status ===
-              "CHANNEL_ERROR" ||
-            status ===
-              "TIMED_OUT"
-          ) {
-            setConnectionState(
-              false,
-              "Realtime no disponible"
-            );
           }
 
         }
@@ -4774,5 +4612,5 @@ window.addEventListener(
 // DEBUG
 // ============================================================
 
-// El cliente Supabase permanece encapsulado en este módulo.
-
+window.adminSupabase =
+  supabase;
