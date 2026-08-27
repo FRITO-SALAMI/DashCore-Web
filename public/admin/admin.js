@@ -528,12 +528,6 @@ $("login-form")
           );
         }
 
-        // ----------------------------------------------------
-        // IMPORTANTE:
-        // Primero verificamos admin_users.
-        // NO mostramos "Acceso autorizado" todavía.
-        // ----------------------------------------------------
-
         if (status) {
 
           status.textContent =
@@ -568,10 +562,6 @@ $("login-form")
 
           return;
         }
-
-        // ----------------------------------------------------
-        // SOLO AQUÍ EL LOGIN ESTÁ REALMENTE AUTORIZADO.
-        // ----------------------------------------------------
 
         if (status) {
 
@@ -1172,14 +1162,14 @@ async function loadOverview() {
   try {
 
     const [
-      profilesResult,
+      usersResult,
       stylesResult,
       versionsResult
     ] =
       await Promise.all([
 
         supabase
-          .from("profiles")
+          .from("app_users")
           .select(
             "id,username,updated_at"
           ),
@@ -1203,8 +1193,8 @@ async function loadOverview() {
           )
       ]);
 
-    if (profilesResult.error) {
-      throw profilesResult.error;
+    if (usersResult.error) {
+      throw usersResult.error;
     }
 
     if (stylesResult.error) {
@@ -1215,8 +1205,8 @@ async function loadOverview() {
       throw versionsResult.error;
     }
 
-    const profiles =
-      profilesResult.data ||
+    const users =
+      usersResult.data ||
       [];
 
     const styles =
@@ -1275,7 +1265,7 @@ async function loadOverview() {
       $("stat-users")
         .textContent =
           num(
-            profiles.length
+            users.length
           );
 
     }
@@ -1285,7 +1275,7 @@ async function loadOverview() {
       $("stat-active")
         .textContent =
           num(
-            profiles.filter(
+            users.filter(
               (item) =>
                 item.updated_at
             ).length
@@ -1330,6 +1320,7 @@ async function loadOverview() {
     renderRanks(
       "city-list",
       {}
+
     );
 
   } catch (error) {
@@ -1375,14 +1366,9 @@ async function loadUsers(
       count
     } =
       await supabase
-        .from("profiles")
+        .from("app_users")
         .select(
-          `
-          id,
-          username,
-          avatar_url,
-          updated_at
-          `,
+          "*",
           {
             count: "exact"
           }
@@ -1410,11 +1396,11 @@ async function loadUsers(
       throw error;
     }
 
-    const profiles =
+    const users =
       data || [];
 
     const ids =
-      profiles.map(
+      users.map(
         (item) =>
           item.id
       );
@@ -1527,23 +1513,23 @@ async function loadUsers(
     );
 
     state.users =
-      profiles.map(
-        (profile) => {
+      users.map(
+        (user) => {
 
           const setting =
             settingsMap.get(
-              profile.id
+              user.id
             ) || {};
 
           return {
 
-            ...profile,
+            ...user,
 
             ...setting,
 
             unlockedStyles:
               stylesMap.get(
-                profile.id
+                user.id
               ) || []
 
           };
@@ -1691,6 +1677,9 @@ function renderUsers() {
               .toUpperCase();
 
           const version =
+            user.version_name ||
+            user.app_version ||
+            user.version ||
             "—";
 
           const style =
@@ -1732,6 +1721,8 @@ function renderUsers() {
               <td>
                 ${esc(
                   fmt(
+                    user.created_at ||
+                    user.inserted_at ||
                     user.updated_at
                   )
                 )}
@@ -1989,7 +1980,7 @@ async function openUser(
       await Promise.all([
 
         supabase
-          .from("profiles")
+          .from("app_users")
           .select("*")
           .eq(
             "id",
@@ -2086,6 +2077,18 @@ async function openUser(
       ],
 
       [
+        "Correo",
+        user.email
+      ],
+
+      [
+        "Creado",
+        fmt(
+          user.created_at
+        )
+      ],
+
+      [
         "Actualizado",
         fmt(
           user.updated_at
@@ -2098,11 +2101,15 @@ async function openUser(
 
       [
         "Modelo",
+        user.device_model ||
+        user.model ||
         "No registrado"
       ],
 
       [
         "Sistema",
+        user.device_os ||
+        user.os_version ||
         "No registrado"
       ],
 
@@ -4335,4 +4342,7 @@ window.addEventListener(
 
   }
 );
-window.adminSupabase = supabase;
+
+
+window.adminSupabase =
+  supabase;
