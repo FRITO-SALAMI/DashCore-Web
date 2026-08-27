@@ -695,8 +695,8 @@ function normalizeEntries(data) {
     return data
       .map((item) => [
         item?.name ??
-          item?.label ??
-          "Sin nombre",
+        item?.label ??
+        "Sin nombre",
 
         Number(
           item?.count ??
@@ -824,9 +824,28 @@ async function loadOverview() {
     ] = await Promise.all([
       supabase
         .from("app_users")
-        .select(
-          "id,username,created_at,updated_at"
-        ),
+        .select(`
+          id,
+          email,
+          display_name,
+          registered_at,
+          first_start_at,
+          last_login_at,
+          session_count,
+          device_model,
+          android_version,
+          manufacturer,
+          dashcore_version,
+          dashcore_build,
+          country_code,
+          language_code,
+          vehicle_brand,
+          vehicle_model,
+          vehicle_year,
+          vehicle_engine,
+          updated_at,
+          location_approx
+        `),
 
       supabase
         .from("user_styles")
@@ -882,34 +901,58 @@ async function loadOverview() {
     const announcements =
       announcementsResult.data || [];
 
+
+    // ----------------------------------------------------------
+    // STYLE COUNTS
+    // ----------------------------------------------------------
+
     const styleCounts = {};
 
     styles.forEach((item) => {
       const id =
-        item.style_id || "unknown";
+        item.style_id ||
+        "unknown";
 
       styleCounts[id] =
         (styleCounts[id] || 0) + 1;
     });
 
+
+    // ----------------------------------------------------------
+    // VERSION COUNTS
+    // ----------------------------------------------------------
+
     const versionCounts = {};
 
-    versions.forEach((item) => {
+    users.forEach((user) => {
       const name =
-        item.version_name ||
-        String(
-          item.version_code || "—"
+        user.dashcore_version ||
+        (
+          user.dashcore_build !== null &&
+          user.dashcore_build !== undefined
+            ? `Build ${user.dashcore_build}`
+            : "Sin versión"
         );
 
       versionCounts[name] =
         (versionCounts[name] || 0) + 1;
     });
 
+
+    // ----------------------------------------------------------
+    // ACTIVE APP VERSIONS
+    // ----------------------------------------------------------
+
     const activeVersions =
       versions.filter(
         (item) =>
           item.is_active !== false
       );
+
+
+    // ----------------------------------------------------------
+    // ACTIVE ANNOUNCEMENTS
+    // ----------------------------------------------------------
 
     const now = Date.now();
 
@@ -936,6 +979,11 @@ async function loadOverview() {
         }
       );
 
+
+    // ----------------------------------------------------------
+    // RECENT REGISTRATIONS
+    // ----------------------------------------------------------
+
     const thirtyDaysAgo =
       Date.now() -
       30 *
@@ -946,13 +994,13 @@ async function loadOverview() {
 
     const recentRegistrations =
       users.filter((user) => {
-        if (!user.created_at) {
+        if (!user.registered_at) {
           return false;
         }
 
         const time =
           new Date(
-            user.created_at
+            user.registered_at
           ).getTime();
 
         return (
@@ -961,15 +1009,20 @@ async function loadOverview() {
         );
       });
 
+
+    // ----------------------------------------------------------
+    // ACTIVE USERS
+    // ----------------------------------------------------------
+
     const activeUsers =
       users.filter((user) => {
-        if (!user.updated_at) {
+        if (!user.last_login_at) {
           return false;
         }
 
         const updated =
           new Date(
-            user.updated_at
+            user.last_login_at
           ).getTime();
 
         return (
@@ -977,6 +1030,64 @@ async function loadOverview() {
           updated >= thirtyDaysAgo
         );
       });
+
+
+    // ----------------------------------------------------------
+    // COUNTRY COUNTS
+    // ----------------------------------------------------------
+
+    const countryCounts = {};
+
+    users.forEach((user) => {
+      const country =
+        user.country_code ||
+        "Desconocido";
+
+      countryCounts[country] =
+        (countryCounts[country] || 0) + 1;
+    });
+
+
+    // ----------------------------------------------------------
+    // CITY COUNTS
+    // ----------------------------------------------------------
+    //
+    // location_approx es JSONB.
+    // Intentamos soportar:
+    // city / city_name / localidad / town
+    //
+
+    const cityCounts = {};
+
+    users.forEach((user) => {
+      const location =
+        user.location_approx;
+
+      if (
+        !location ||
+        typeof location !== "object"
+      ) {
+        return;
+      }
+
+      const city =
+        location.city ||
+        location.city_name ||
+        location.locality ||
+        location.town;
+
+      if (!city) {
+        return;
+      }
+
+      cityCounts[city] =
+        (cityCounts[city] || 0) + 1;
+    });
+
+
+    // ----------------------------------------------------------
+    // STATS
+    // ----------------------------------------------------------
 
     if ($("stat-users")) {
       $("stat-users").textContent =
@@ -1009,6 +1120,11 @@ async function loadOverview() {
         );
     }
 
+
+    // ----------------------------------------------------------
+    // LATEST ANNOUNCEMENT
+    // ----------------------------------------------------------
+
     const overviewAnnouncement =
       $("overview-announcement");
 
@@ -1019,6 +1135,7 @@ async function loadOverview() {
       if (latestActive) {
         overviewAnnouncement.innerHTML = `
           <div class="overview-announcement-card">
+
             <span class="announcement-badge">
               AVISO ACTIVO
             </span>
@@ -1045,6 +1162,7 @@ async function loadOverview() {
                 )
               )}
             </small>
+
           </div>
         `;
       } else {
@@ -1055,6 +1173,11 @@ async function loadOverview() {
         `;
       }
     }
+
+
+    // ----------------------------------------------------------
+    // CHARTS
+    // ----------------------------------------------------------
 
     renderRanks(
       "version-chart",
@@ -1069,13 +1192,18 @@ async function loadOverview() {
 
     renderRanks(
       "country-list",
-      {}
+      countryCounts
     );
 
     renderRanks(
       "city-list",
-      {}
+      cityCounts
     );
+
+
+    // ----------------------------------------------------------
+    // ANNOUNCEMENTS STATE
+    // ----------------------------------------------------------
 
     if ($("view-announcements")) {
       state.announcements =
@@ -1101,12 +1229,10 @@ async function loadOverview() {
 // ============================================================
 // USERS
 // ============================================================
-//
-// ESTA FUNCIÓN FALTABA EN EL ARCHIVO ANTERIOR.
-// ============================================================
 
 async function loadUsers(reset = false) {
-  const root = $("users-table");
+  const root =
+    $("users-table");
 
   if (!root) {
     return;
@@ -1149,7 +1275,7 @@ async function loadUsers(reset = false) {
           count: "exact"
         })
         .order(
-          "created_at",
+          "registered_at",
           {
             ascending: false
           }
@@ -1193,8 +1319,7 @@ async function loadUsers(reset = false) {
 
     if (next) {
       next.disabled =
-        state.userPage >=
-        totalPages ||
+        state.userPage >= totalPages ||
         state.users.length <
           state.usersPageSize;
     }
@@ -1267,27 +1392,40 @@ function renderUsers() {
     $("version-filter")
       ?.value || "";
 
+
   const filtered =
     state.users.filter((user) => {
+
       const searchable = [
         user.email,
-        user.uid,
+        user.display_name,
         user.id,
-        user.username
+        user.device_model,
+        user.manufacturer,
+        user.dashcore_version,
+        user.country_code,
+        user.vehicle_brand,
+        user.vehicle_model
       ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
 
+
       const matchesSearch =
         !term ||
         searchable.includes(term);
 
+
       const matchesCountry =
-        !country;
+        !country ||
+        user.country_code === country;
+
 
       const matchesVersion =
-        !version;
+        !version ||
+        user.dashcore_version === version;
+
 
       return (
         matchesSearch &&
@@ -1295,6 +1433,7 @@ function renderUsers() {
         matchesVersion
       );
     });
+
 
   if (!filtered.length) {
     root.innerHTML = `
@@ -1310,27 +1449,37 @@ function renderUsers() {
     return;
   }
 
+
   root.innerHTML =
     filtered
       .map((user) => {
+
         const username =
-          user.username ||
+          user.display_name ||
+          user.email ||
           "Usuario";
+
 
         const avatar =
           username
             .charAt(0)
             .toUpperCase();
 
+
         const version =
-          user.version_name ||
-          user.app_version ||
-          user.version ||
-          "—";
+          user.dashcore_version ||
+          (
+            user.dashcore_build !== null &&
+            user.dashcore_build !== undefined
+              ? `Build ${user.dashcore_build}`
+              : "—"
+          );
+
 
         const style =
           user.selected_style ||
-          "sporty";
+          "—";
+
 
         return `
           <tr
@@ -1346,43 +1495,54 @@ function renderUsers() {
                 </span>
 
                 <div>
+
                   <strong>
                     ${esc(username)}
                   </strong>
 
                   <small>
-                    ${esc(user.id)}
+                    ${esc(user.email || user.id)}
                   </small>
+
                 </div>
 
               </div>
             </td>
 
-            <td>
-              ${esc(
-                fmt(
-                  user.created_at ||
-                  user.inserted_at ||
-                  user.updated_at
-                )
-              )}
-            </td>
 
             <td>
               ${esc(
                 fmt(
-                  user.updated_at
+                  user.registered_at
                 )
               )}
             </td>
 
-            <td>
-              —
-            </td>
 
             <td>
-              —
+              ${esc(
+                fmt(
+                  user.last_login_at
+                )
+              )}
             </td>
+
+
+            <td>
+              ${esc(
+                user.device_model ||
+                "—"
+              )}
+            </td>
+
+
+            <td>
+              ${esc(
+                user.country_code ||
+                "—"
+              )}
+            </td>
+
 
             <td>
               <span class="version-pill">
@@ -1390,9 +1550,13 @@ function renderUsers() {
               </span>
             </td>
 
+
             <td>
-              ${esc(style)}
+              ${esc(
+                style
+              )}
             </td>
+
 
             <td>
               ${esc(
@@ -1407,9 +1571,11 @@ function renderUsers() {
       })
       .join("");
 
+
   qsa(
     "#users-table tr[data-id]"
   ).forEach((row) => {
+
     row.addEventListener(
       "click",
       () => {
@@ -1419,21 +1585,26 @@ function renderUsers() {
       }
     );
 
+
     row.addEventListener(
       "keydown",
       (event) => {
+
         if (
           event.key === "Enter" ||
           event.key === " "
         ) {
+
           event.preventDefault();
 
           openUser(
             row.dataset.id
           );
         }
+
       }
     );
+
   });
 }
 
@@ -1443,6 +1614,7 @@ function renderUsers() {
 // ============================================================
 
 function updateFilters() {
+
   const currentCountry =
     $("country-filter")?.value ||
     "";
@@ -1451,39 +1623,111 @@ function updateFilters() {
     $("version-filter")?.value ||
     "";
 
+
+  const countries =
+    [
+      ...new Set(
+        state.users
+          .map(
+            (user) =>
+              user.country_code
+          )
+          .filter(Boolean)
+      )
+    ]
+      .sort();
+
+
+  const versions =
+    [
+      ...new Set(
+        state.users
+          .map(
+            (user) =>
+              user.dashcore_version
+          )
+          .filter(Boolean)
+      )
+    ]
+      .sort()
+      .reverse();
+
+
   if ($("country-filter")) {
+
     $("country-filter").innerHTML = `
       <option value="">
         Todos los países
       </option>
+
+      ${
+        countries
+          .map(
+            (country) => `
+              <option value="${esc(country)}">
+                ${esc(country)}
+              </option>
+            `
+          )
+          .join("")
+      }
     `;
 
-    $("country-filter").value =
-      currentCountry;
+    if (
+      countries.includes(
+        currentCountry
+      )
+    ) {
+      $("country-filter").value =
+        currentCountry;
+    }
   }
 
+
   if ($("version-filter")) {
+
     $("version-filter").innerHTML = `
       <option value="">
         Todas las versiones
       </option>
+
+      ${
+        versions
+          .map(
+            (version) => `
+              <option value="${esc(version)}">
+                ${esc(version)}
+              </option>
+            `
+          )
+          .join("")
+      }
     `;
 
-    $("version-filter").value =
-      currentVersion;
+    if (
+      versions.includes(
+        currentVersion
+      )
+    ) {
+      $("version-filter").value =
+        currentVersion;
+    }
   }
 
+
   return {
-    countries: [],
-    versions: []
+    countries,
+    versions
   };
 }
+
 
 [
   "user-search",
   "country-filter",
   "version-filter"
 ].forEach((id) => {
+
   $(id)?.addEventListener(
     "input",
     renderUsers
@@ -1493,11 +1737,14 @@ function updateFilters() {
     "change",
     renderUsers
   );
+
 });
+
 
 $("clear-user-filters")?.addEventListener(
   "click",
   () => {
+
     if ($("user-search")) {
       $("user-search").value = "";
     }
@@ -1511,6 +1758,7 @@ $("clear-user-filters")?.addEventListener(
     }
 
     renderUsers();
+
   }
 );
 
@@ -1522,6 +1770,7 @@ $("clear-user-filters")?.addEventListener(
 $("users-next")?.addEventListener(
   "click",
   async () => {
+
     const button =
       $("users-next");
 
@@ -1535,9 +1784,11 @@ $("users-next")?.addEventListener(
   }
 );
 
+
 $("users-prev")?.addEventListener(
   "click",
   async () => {
+
     if (state.userPage <= 1) {
       return;
     }
@@ -1554,17 +1805,20 @@ $("users-prev")?.addEventListener(
 // ============================================================
 
 async function openUser(id) {
+
   if (!id) {
     return;
   }
 
   try {
+
     const [
       profileResult,
       settingsResult,
       stylesResult
     ] =
       await Promise.all([
+
         supabase
           .from("app_users")
           .select("*")
@@ -1587,7 +1841,9 @@ async function openUser(id) {
             "unlocked_at",
             { ascending: false }
           )
+
       ]);
+
 
     if (profileResult.error) {
       throw profileResult.error;
@@ -1601,7 +1857,9 @@ async function openUser(id) {
       throw stylesResult.error;
     }
 
+
     if (!profileResult.data) {
+
       toast(
         "Usuario no encontrado.",
         "error"
@@ -1610,85 +1868,229 @@ async function openUser(id) {
       return;
     }
 
+
     const user = {
       ...profileResult.data,
       ...(settingsResult.data || {})
     };
 
+
     const styles =
-      safeArray(stylesResult.data);
+      safeArray(
+        stylesResult.data
+      );
+
 
     const username =
-      user.username ||
+      user.display_name ||
+      user.email ||
       "Usuario";
+
 
     const avatar =
       username
         .charAt(0)
         .toUpperCase();
 
+
+    // ----------------------------------------------------------
+    // ACCOUNT
+    // ----------------------------------------------------------
+
     const accountRows = [
-      ["UID", user.id],
-      ["Usuario", user.username],
-      ["Correo", user.email],
-      ["Creado", fmt(user.created_at)],
-      ["Actualizado", fmt(user.updated_at)]
+
+      [
+        "UID",
+        user.id
+      ],
+
+      [
+        "Nombre",
+        user.display_name
+      ],
+
+      [
+        "Correo",
+        user.email
+      ],
+
+      [
+        "Registrado",
+        fmt(
+          user.registered_at
+        )
+      ],
+
+      [
+        "Primer inicio",
+        fmt(
+          user.first_start_at
+        )
+      ],
+
+      [
+        "Último login",
+        fmt(
+          user.last_login_at
+        )
+      ],
+
+      [
+        "Sesiones",
+        user.session_count
+      ],
+
+      [
+        "Actualizado",
+        fmt(
+          user.updated_at
+        )
+      ]
+
     ];
+
+
+    // ----------------------------------------------------------
+    // DEVICE
+    // ----------------------------------------------------------
 
     const deviceRows = [
+
+      [
+        "Fabricante",
+        user.manufacturer
+      ],
+
       [
         "Modelo",
-        user.device_model ||
-        user.model ||
-        "No registrado"
+        user.device_model
       ],
+
       [
-        "Sistema",
-        user.device_os ||
-        user.os_version ||
-        "No registrado"
+        "Android",
+        user.android_version
       ],
-      ["Idioma", user.language],
-      ["Unidad", user.temp_unit]
+
+      [
+        "DashCore",
+        user.dashcore_version
+      ],
+
+      [
+        "Build",
+        user.dashcore_build
+      ],
+
+      [
+        "Idioma",
+        user.language_code
+      ],
+
+      [
+        "País",
+        user.country_code
+      ]
+
     ];
 
+
+    // ----------------------------------------------------------
+    // VEHICLE
+    // ----------------------------------------------------------
+
+    const vehicleRows = [
+
+      [
+        "Marca",
+        user.vehicle_brand
+      ],
+
+      [
+        "Modelo",
+        user.vehicle_model
+      ],
+
+      [
+        "Año",
+        user.vehicle_year
+      ],
+
+      [
+        "Motor",
+        user.vehicle_engine
+      ]
+
+    ];
+
+
+    // ----------------------------------------------------------
+    // PREFERENCES
+    // ----------------------------------------------------------
+
     const preferenceRows = [
+
       [
         "Estilo seleccionado",
         user.selected_style
       ],
+
       [
         "Color",
         user.accent_color
       ],
+
+      [
+        "Unidad",
+        user.temp_unit
+      ],
+
+      [
+        "Idioma",
+        user.language ||
+        user.language_code
+      ],
+
       [
         "Fondo",
         user.background_path
       ],
+
       [
         "Modelo 3D",
         user.model_path
       ]
+
     ];
+
 
     const rows = (items) =>
       items
         .map(
           ([label, value]) => `
             <div>
+
               <span>
                 ${esc(label)}
               </span>
 
               <strong>
-                ${esc(value || "—")}
+                ${esc(
+                  value === null ||
+                  value === undefined ||
+                  value === ""
+                    ? "—"
+                    : value
+                )}
               </strong>
+
             </div>
           `
         )
         .join("");
 
+
     $("user-detail-root").innerHTML = `
+
       <div class="profile-head">
 
         <div class="profile-avatar">
@@ -1696,6 +2098,7 @@ async function openUser(id) {
         </div>
 
         <div>
+
           <p class="eyebrow">
             USER PROFILE
           </p>
@@ -1705,8 +2108,9 @@ async function openUser(id) {
           </h1>
 
           <p class="muted">
-            ${esc(user.id)}
+            ${esc(user.email || user.id)}
           </p>
+
         </div>
 
         <span class="role-badge">
@@ -1715,10 +2119,14 @@ async function openUser(id) {
 
       </div>
 
+
       <div class="profile-grid">
 
+
         <article class="panel">
+
           <div class="panel-head">
+
             <p class="eyebrow">
               IDENTIDAD
             </p>
@@ -1726,31 +2134,62 @@ async function openUser(id) {
             <h3>
               Cuenta
             </h3>
+
           </div>
 
           <div class="detail-list">
             ${rows(accountRows)}
           </div>
+
         </article>
 
+
         <article class="panel">
+
           <div class="panel-head">
+
             <p class="eyebrow">
-              ENTORNO
+              DISPOSITIVO
             </p>
 
             <h3>
-              Configuración
+              Entorno
             </h3>
+
           </div>
 
           <div class="detail-list">
             ${rows(deviceRows)}
           </div>
+
         </article>
 
+
         <article class="panel">
+
           <div class="panel-head">
+
+            <p class="eyebrow">
+              VEHÍCULO
+            </p>
+
+            <h3>
+              Vehículo registrado
+            </h3>
+
+          </div>
+
+          <div class="detail-list">
+            ${rows(vehicleRows)}
+          </div>
+
+        </article>
+
+
+        <article class="panel">
+
+          <div class="panel-head">
+
             <p class="eyebrow">
               DISEÑOS
             </p>
@@ -1758,9 +2197,11 @@ async function openUser(id) {
             <h3>
               Estilos desbloqueados
             </h3>
+
           </div>
 
           <div class="chips">
+
             ${
               styles.length
                 ? styles
@@ -1774,17 +2215,23 @@ async function openUser(id) {
                       `
                     )
                     .join("")
+
                 : `
                     <span class="muted">
                       Sin estilos registrados.
                     </span>
                   `
             }
+
           </div>
+
         </article>
 
+
         <article class="panel">
+
           <div class="panel-head">
+
             <p class="eyebrow">
               PREFERENCIAS
             </p>
@@ -1792,18 +2239,60 @@ async function openUser(id) {
             <h3>
               DashCore
             </h3>
+
           </div>
 
           <div class="detail-list">
             ${rows(preferenceRows)}
           </div>
+
         </article>
 
+
+        <article class="panel">
+
+          <div class="panel-head">
+
+            <p class="eyebrow">
+              GEO INTELLIGENCE
+            </p>
+
+            <h3>
+              Ubicación aproximada
+            </h3>
+
+          </div>
+
+          <div class="detail-list">
+
+            ${rows([
+              [
+                "País",
+                user.country_code
+              ],
+
+              [
+                "Datos",
+                user.location_approx
+                  ? JSON.stringify(
+                      user.location_approx
+                    )
+                  : null
+              ]
+            ])}
+
+          </div>
+
+        </article>
+
+
       </div>
+
 
       <article class="panel activity-panel">
 
         <div class="panel-head">
+
           <p class="eyebrow">
             STATUS
           </p>
@@ -1811,32 +2300,42 @@ async function openUser(id) {
           <h3>
             Estado de sincronización
           </h3>
+
         </div>
+
 
         <div class="activity-row">
 
           <span class="activity-dot"></span>
 
           <div>
+
             <strong>
               Perfil sincronizado
             </strong>
 
             <small>
               ${esc(
-                fmt(user.updated_at)
+                fmt(
+                  user.updated_at
+                )
               )}
             </small>
+
           </div>
 
         </div>
 
       </article>
+
     `;
+
 
     view("user-detail");
 
+
   } catch (error) {
+
     console.error(
       "USER DETAIL ERROR:",
       error
@@ -1846,6 +2345,7 @@ async function openUser(id) {
       "No se pudo cargar el perfil.",
       "error"
     );
+
   }
 }
 
@@ -1855,6 +2355,7 @@ async function openUser(id) {
 // ============================================================
 
 async function loadStyles() {
+
   const root =
     $("styles-grid");
 
@@ -1863,6 +2364,7 @@ async function loadStyles() {
   }
 
   try {
+
     const {
       data,
       error
@@ -1871,20 +2373,26 @@ async function loadStyles() {
         .from("user_styles")
         .select("style_id");
 
+
     if (error) {
       throw error;
     }
 
+
     const counts = {};
 
+
     (data || []).forEach((item) => {
+
       const id =
         item.style_id ||
         "unknown";
 
       counts[id] =
         (counts[id] || 0) + 1;
+
     });
+
 
     state.styles =
       Object.entries(counts)
@@ -1898,7 +2406,9 @@ async function loadStyles() {
             a.usageCount
         );
 
+
     if (!state.styles.length) {
+
       root.innerHTML = `
         <div class="empty-state">
           No hay estilos registrados.
@@ -1907,6 +2417,7 @@ async function loadStyles() {
 
       return;
     }
+
 
     root.innerHTML =
       state.styles
@@ -1932,6 +2443,7 @@ async function loadStyles() {
               <div class="style-card-body">
 
                 <div>
+
                   <h3>
                     ${esc(style.id)}
                   </h3>
@@ -1939,6 +2451,7 @@ async function loadStyles() {
                   <small>
                     ${esc(style.id)}
                   </small>
+
                 </div>
 
                 <strong>
@@ -1948,6 +2461,7 @@ async function loadStyles() {
               </div>
 
               <div class="style-card-foot">
+
                 <span>
                   Usuarios
                 </span>
@@ -1955,6 +2469,7 @@ async function loadStyles() {
                 <span>
                   ${num(style.usageCount)}
                 </span>
+
               </div>
 
             </article>
@@ -1962,7 +2477,9 @@ async function loadStyles() {
         )
         .join("");
 
+
   } catch (error) {
+
     console.error(
       "STYLES ERROR:",
       error
@@ -1973,6 +2490,7 @@ async function loadStyles() {
         No se pudieron cargar los estilos.
       </div>
     `;
+
   }
 }
 
@@ -1982,32 +2500,200 @@ async function loadStyles() {
 // ============================================================
 
 async function loadLocations() {
+
   const countryRoot =
     $("location-countries");
 
   const cityRoot =
     $("location-cities");
 
-  if (countryRoot) {
-    countryRoot.innerHTML = `
-      <div class="empty-state">
-        No hay columnas de ubicación
-        en el esquema actual.
-      </div>
-    `;
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabase
+        .from("app_users")
+        .select(
+          "country_code,location_approx"
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    const countryCounts = {};
+    const cityCounts = {};
+
+
+    (data || []).forEach((user) => {
+
+      const country =
+        user.country_code ||
+        "Desconocido";
+
+      countryCounts[country] =
+        (countryCounts[country] || 0) + 1;
+
+
+      const location =
+        user.location_approx;
+
+
+      if (
+        location &&
+        typeof location === "object"
+      ) {
+
+        const city =
+          location.city ||
+          location.city_name ||
+          location.locality ||
+          location.town;
+
+
+        if (city) {
+          cityCounts[city] =
+            (cityCounts[city] || 0) + 1;
+        }
+
+      }
+
+    });
+
+
+    if (countryRoot) {
+      renderRanks(
+        "location-countries",
+        countryCounts
+      );
+    }
+
+
+    if (cityRoot) {
+      renderRanks(
+        "location-cities",
+        cityCounts
+      );
+    }
+
+
+    initializeMap();
+
+    clearMarkers();
+
+
+    // ----------------------------------------------------------
+    // MAP MARKERS
+    // ----------------------------------------------------------
+
+    if (
+      state.map &&
+      Array.isArray(data)
+    ) {
+
+      data.forEach((user) => {
+
+        const location =
+          user.location_approx;
+
+
+        if (
+          !location ||
+          typeof location !== "object"
+        ) {
+          return;
+        }
+
+
+        const lat =
+          Number(
+            location.lat ??
+            location.latitude
+          );
+
+
+        const lng =
+          Number(
+            location.lng ??
+            location.lon ??
+            location.longitude
+          );
+
+
+        if (
+          !Number.isFinite(lat) ||
+          !Number.isFinite(lng)
+        ) {
+          return;
+        }
+
+
+        const marker =
+          L.marker([
+            lat,
+            lng
+          ]);
+
+
+        marker
+          .bindPopup(`
+            <strong>
+              ${esc(
+                user.country_code ||
+                "Usuario"
+              )}
+            </strong>
+          `)
+          .addTo(
+            state.map
+          );
+
+
+        state.markers.push(
+          marker
+        );
+
+      });
+
+    }
+
+
+  } catch (error) {
+
+    console.error(
+      "LOCATIONS ERROR:",
+      error
+    );
+
+
+    if (countryRoot) {
+      countryRoot.innerHTML = `
+        <div class="empty-state">
+          No se pudieron cargar las ubicaciones.
+        </div>
+      `;
+    }
+
+
+    if (cityRoot) {
+      cityRoot.innerHTML = `
+        <div class="empty-state">
+          No se pudieron cargar las ubicaciones.
+        </div>
+      `;
+    }
+
+
+    initializeMap();
+
+    clearMarkers();
+
   }
-
-  if (cityRoot) {
-    cityRoot.innerHTML = `
-      <div class="empty-state">
-        Ubicaciones no configuradas.
-      </div>
-    `;
-  }
-
-  initializeMap();
-
-  clearMarkers();
 }
 
 
@@ -2016,6 +2702,7 @@ async function loadLocations() {
 // ============================================================
 
 function initializeMap() {
+
   if (
     state.map ||
     typeof L === "undefined"
@@ -2023,12 +2710,15 @@ function initializeMap() {
     return;
   }
 
+
   const mapElement =
     $("map");
+
 
   if (!mapElement) {
     return;
   }
+
 
   state.map =
     L.map(
@@ -2041,11 +2731,13 @@ function initializeMap() {
       2
     );
 
+
   L.control.zoom({
     position: "bottomright"
   }).addTo(
     state.map
   );
+
 
   L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -2059,9 +2751,12 @@ function initializeMap() {
   );
 }
 
+
 function clearMarkers() {
+
   state.markers.forEach(
-    (marker) => marker.remove()
+    (marker) =>
+      marker.remove()
   );
 
   state.markers = [];
@@ -2073,6 +2768,7 @@ function clearMarkers() {
 // ============================================================
 
 async function loadVersions() {
+
   const root =
     $("versions-list");
 
@@ -2080,7 +2776,9 @@ async function loadVersions() {
     return;
   }
 
+
   try {
+
     const {
       data,
       error
@@ -2096,14 +2794,18 @@ async function loadVersions() {
         )
         .limit(50);
 
+
     if (error) {
       throw error;
     }
 
+
     state.versions =
       data || [];
 
+
     if (!state.versions.length) {
+
       root.innerHTML = `
         <div class="empty-state">
           No hay versiones publicadas.
@@ -2113,15 +2815,19 @@ async function loadVersions() {
       return;
     }
 
+
     root.innerHTML =
       state.versions
         .map(
           (version) => {
+
             const required =
               version.is_mandatory === true;
 
+
             const active =
               version.is_active !== false;
+
 
             return `
               <article class="version-card">
@@ -2206,30 +2912,39 @@ async function loadVersions() {
         )
         .join("");
 
+
     qsa(".edit-version").forEach(
       (button) => {
+
         button.addEventListener(
           "click",
           () => {
+
             openVersion(
               button.dataset.id
             );
+
           }
         );
+
       }
     );
 
+
   } catch (error) {
+
     console.error(
       "VERSIONS ERROR:",
       error
     );
+
 
     root.innerHTML = `
       <div class="empty-state">
         No se pudieron cargar las versiones.
       </div>
     `;
+
   }
 }
 
@@ -2241,40 +2956,53 @@ async function loadVersions() {
 const versionModal =
   $("version-modal");
 
+
 function resetVersionForm() {
+
   $("version-form")?.reset();
+
 
   if ($("v-active")) {
     $("v-active").checked = true;
   }
 
+
   if ($("v-required")) {
     $("v-required").checked = false;
   }
+
 
   if ($("version-status")) {
     $("version-status").textContent = "";
   }
 }
 
+
 function closeVersionModal() {
+
   versionModal?.classList.add(
     "hidden"
   );
 
+
   state.editingVersion = null;
+
 
   resetVersionForm();
 }
 
+
 qsa("[data-close-version]").forEach(
   (element) => {
+
     element.addEventListener(
       "click",
       closeVersionModal
     );
+
   }
 );
+
 
 $("new-version")?.addEventListener(
   "click",
@@ -2283,19 +3011,27 @@ $("new-version")?.addEventListener(
   }
 );
 
+
 function openVersion(id = null) {
+
   state.editingVersion = id;
+
 
   resetVersionForm();
 
+
   if ($("version-modal-title")) {
+
     $("version-modal-title").textContent =
       id
         ? "Editar versión"
         : "Nueva versión";
+
   }
 
+
   if (id) {
+
     const version =
       state.versions.find(
         (item) =>
@@ -2303,7 +3039,9 @@ function openVersion(id = null) {
           String(id)
       );
 
+
     if (!version) {
+
       toast(
         "Versión no encontrada.",
         "error"
@@ -2312,27 +3050,36 @@ function openVersion(id = null) {
       return;
     }
 
+
     $("v-name").value =
       version.version_name || "";
+
 
     $("v-code").value =
       version.version_code ?? "";
 
+
     $("v-min").value =
       version.min_version_code ?? "";
+
 
     $("v-url").value =
       version.download_url || "";
 
+
     $("v-changelog").value =
       version.changelog || "";
+
 
     $("v-required").checked =
       version.is_mandatory === true;
 
+
     $("v-active").checked =
       version.is_active !== false;
+
   }
+
 
   versionModal?.classList.remove(
     "hidden"
@@ -2347,10 +3094,13 @@ function openVersion(id = null) {
 $("version-form")?.addEventListener(
   "submit",
   async (event) => {
+
     event.preventDefault();
+
 
     const status =
       $("version-status");
+
 
     const {
       data: {
@@ -2359,7 +3109,9 @@ $("version-form")?.addEventListener(
     } =
       await supabase.auth.getUser();
 
+
     if (!user) {
+
       if (status) {
         status.textContent =
           "La sesión administrativa expiró.";
@@ -2368,38 +3120,46 @@ $("version-form")?.addEventListener(
       return;
     }
 
+
     const versionName =
       $("v-name")
         ?.value
         .trim();
+
 
     const versionCode =
       Number(
         $("v-code")?.value
       );
 
+
     const minVersionCode =
       Number(
         $("v-min")?.value
       );
+
 
     const downloadUrl =
       $("v-url")
         ?.value
         .trim();
 
+
     const changelog =
       $("v-changelog")
         ?.value
         .trim();
 
+
     const isMandatory =
       $("v-required")
         ?.checked === true;
 
+
     const isActive =
       $("v-active")
         ?.checked !== false;
+
 
     if (
       !versionName ||
@@ -2407,25 +3167,31 @@ $("version-form")?.addEventListener(
       !Number.isFinite(minVersionCode) ||
       !downloadUrl
     ) {
+
       if (status) {
         status.textContent =
           "Completa todos los campos obligatorios.";
       }
+
 
       toast(
         "Faltan datos de la versión.",
         "error"
       );
 
+
       return;
     }
+
 
     if (status) {
       status.textContent =
         "Guardando versión…";
     }
 
+
     const payload = {
+
       version_name:
         versionName,
 
@@ -2449,10 +3215,14 @@ $("version-form")?.addEventListener(
 
       is_mandatory:
         isMandatory
+
     };
 
+
     try {
+
       if (state.editingVersion) {
+
         const {
           error
         } =
@@ -2464,32 +3234,42 @@ $("version-form")?.addEventListener(
               state.editingVersion
             );
 
+
         if (error) {
           throw error;
         }
 
       } else {
+
         const {
           error
         } =
           await supabase
             .from("app_versions")
-            .insert(payload);
+            .insert(
+              payload
+            );
+
 
         if (error) {
           throw error;
         }
+
       }
+
 
       const wasEditing =
         Boolean(
           state.editingVersion
         );
 
+
       closeVersionModal();
+
 
       await loadVersions();
       await loadOverview();
+
 
       toast(
         wasEditing
@@ -2498,22 +3278,28 @@ $("version-form")?.addEventListener(
         "success"
       );
 
+
     } catch (error) {
+
       console.error(
         "VERSION SAVE ERROR:",
         error
       );
+
 
       if (status) {
         status.textContent =
           "No se pudo guardar. Revisa las políticas RLS.";
       }
 
+
       toast(
         "Error al guardar la versión.",
         "error"
       );
+
     }
+
   }
 );
 
@@ -2523,53 +3309,90 @@ $("version-form")?.addEventListener(
 // ============================================================
 
 function ensureAnnouncementUI() {
+
   const nav =
-    document.querySelector(".main-nav");
+    document.querySelector(
+      ".main-nav"
+    );
+
 
   const content =
-    document.querySelector(".content");
+    document.querySelector(
+      ".content"
+    );
+
 
   if (!nav || !content) {
     return;
   }
+
 
   if (
     !nav.querySelector(
       '[data-view="announcements"]'
     )
   ) {
-    const button =
-      document.createElement("button");
 
-    button.className = "nav-item";
+    const button =
+      document.createElement(
+        "button"
+      );
+
+
+    button.className =
+      "nav-item";
+
+
     button.dataset.view =
       "announcements";
-    button.type = "button";
+
+
+    button.type =
+      "button";
+
 
     button.innerHTML =
       `<span>!</span> Avisos`;
 
+
     button.addEventListener(
       "click",
       () =>
-        view("announcements")
+        view(
+          "announcements"
+        )
     );
 
-    nav.appendChild(button);
+
+    nav.appendChild(
+      button
+    );
+
   }
 
-  if (!$("view-announcements")) {
-    const section =
-      document.createElement("div");
 
-    section.className = "view";
+  if (!$("view-announcements")) {
+
+    const section =
+      document.createElement(
+        "div"
+      );
+
+
+    section.className =
+      "view";
+
+
     section.id =
       "view-announcements";
 
+
     section.innerHTML = `
+
       <div class="welcome-row">
 
         <div>
+
           <p class="eyebrow">
             REMOTE CONTROL
           </p>
@@ -2581,6 +3404,7 @@ function ensureAnnouncementUI() {
           <p class="muted">
             Mensajes remotos que DashCore puede consultar cuando tenga conexión.
           </p>
+
         </div>
 
         <button
@@ -2593,35 +3417,51 @@ function ensureAnnouncementUI() {
 
       </div>
 
+
       <div
         id="announcement-active"
         class="announcement-active"
       ></div>
 
+
       <div
         id="announcements-list"
         class="announcements-list"
       ></div>
+
     `;
 
-    content.appendChild(section);
+
+    content.appendChild(
+      section
+    );
+
   }
 
+
   if (!$("announcement-modal")) {
+
     const modal =
-      document.createElement("div");
+      document.createElement(
+        "div"
+      );
+
 
     modal.className =
       "modal hidden";
 
+
     modal.id =
       "announcement-modal";
 
+
     modal.innerHTML = `
+
       <div
         class="modal-backdrop"
         data-close-announcement
       ></div>
+
 
       <div
         class="modal-card"
@@ -2639,19 +3479,23 @@ function ensureAnnouncementUI() {
           ×
         </button>
 
+
         <p class="eyebrow">
           REMOTE CONTROL
         </p>
 
+
         <h2 id="announcement-modal-title">
           Nuevo aviso
         </h2>
+
 
         <form id="announcement-form">
 
           <label for="a-title">
             Título
           </label>
+
 
           <input
             id="a-title"
@@ -2660,9 +3504,11 @@ function ensureAnnouncementUI() {
             placeholder="Mantenimiento programado"
           >
 
+
           <label for="a-message">
             Mensaje
           </label>
+
 
           <textarea
             id="a-message"
@@ -2672,6 +3518,7 @@ function ensureAnnouncementUI() {
             placeholder="Escribe el aviso que verá DashCore..."
           ></textarea>
 
+
           <div class="form-grid">
 
             <div>
@@ -2680,12 +3527,14 @@ function ensureAnnouncementUI() {
                 Expira
               </label>
 
+
               <input
                 id="a-expires"
                 type="datetime-local"
               >
 
             </div>
+
 
             <div>
 
@@ -2710,10 +3559,12 @@ function ensureAnnouncementUI() {
 
           </div>
 
+
           <div
             class="form-status"
             id="announcement-status"
           ></div>
+
 
           <button
             class="primary-btn"
@@ -2725,29 +3576,41 @@ function ensureAnnouncementUI() {
         </form>
 
       </div>
+
     `;
 
-    document.body.appendChild(modal);
+
+    document.body.appendChild(
+      modal
+    );
+
   }
+
 
   $("new-announcement")?.addEventListener(
     "click",
-    () => openAnnouncement()
+    () =>
+      openAnnouncement()
   );
+
 
   qsa(
     "[data-close-announcement]"
   ).forEach((el) => {
+
     el.addEventListener(
       "click",
       closeAnnouncement
     );
+
   });
+
 
   $("announcement-form")?.addEventListener(
     "submit",
     saveAnnouncement
   );
+
 }
 
 
@@ -2756,9 +3619,13 @@ function ensureAnnouncementUI() {
 // ============================================================
 
 function openAnnouncement(id = null) {
+
   ensureAnnouncementUI();
 
-  state.editingAnnouncement = id;
+
+  state.editingAnnouncement =
+    id;
+
 
   const item =
     state.announcements.find(
@@ -2767,32 +3634,41 @@ function openAnnouncement(id = null) {
         String(id)
     );
 
+
   $("announcement-modal-title")
     .textContent =
       item
         ? "Editar aviso"
         : "Nuevo aviso";
 
+
   $("announcement-form")?.reset();
+
 
   $("a-active").checked =
     item
       ? item.is_active !== false
       : true;
 
+
   $("a-title").value =
     item?.title || "";
+
 
   $("a-message").value =
     item?.message || "";
 
+
   if (item?.expires_at) {
+
     const d =
       new Date(
         item.expires_at
       );
 
+
     if (!Number.isNaN(d.getTime())) {
+
       $("a-expires").value =
         new Date(
           d.getTime() -
@@ -2801,21 +3677,33 @@ function openAnnouncement(id = null) {
         )
           .toISOString()
           .slice(0, 16);
+
     }
+
   }
+
 
   $("announcement-status")
     .textContent = "";
 
+
   $("announcement-modal")
-    ?.classList.remove("hidden");
+    ?.classList.remove(
+      "hidden"
+    );
 }
 
-function closeAnnouncement() {
-  $("announcement-modal")
-    ?.classList.add("hidden");
 
-  state.editingAnnouncement = null;
+function closeAnnouncement() {
+
+  $("announcement-modal")
+    ?.classList.add(
+      "hidden"
+    );
+
+
+  state.editingAnnouncement =
+    null;
 }
 
 
@@ -2824,16 +3712,21 @@ function closeAnnouncement() {
 // ============================================================
 
 async function loadAnnouncements() {
+
   ensureAnnouncementUI();
+
 
   const root =
     $("announcements-list");
+
 
   if (!root) {
     return;
   }
 
+
   try {
+
     const {
       data,
       error
@@ -2849,20 +3742,26 @@ async function loadAnnouncements() {
         )
         .limit(50);
 
+
     if (error) {
       throw error;
     }
 
+
     state.announcements =
       data || [];
 
+
     renderAnnouncements();
 
+
   } catch (error) {
+
     console.error(
       "ANNOUNCEMENTS ERROR:",
       error
     );
+
 
     root.innerHTML = `
       <div class="empty-state">
@@ -2870,6 +3769,7 @@ async function loadAnnouncements() {
         Revisa RLS y la tabla remote_announcements.
       </div>
     `;
+
   }
 }
 
@@ -2879,6 +3779,7 @@ async function loadAnnouncements() {
 // ============================================================
 
 function isAnnouncementCurrentlyActive(item) {
+
   if (
     !item ||
     item.is_active === false
@@ -2886,14 +3787,17 @@ function isAnnouncementCurrentlyActive(item) {
     return false;
   }
 
+
   if (!item.expires_at) {
     return true;
   }
+
 
   const expiry =
     new Date(
       item.expires_at
     ).getTime();
+
 
   return (
     Number.isNaN(expiry) ||
@@ -2907,25 +3811,32 @@ function isAnnouncementCurrentlyActive(item) {
 // ============================================================
 
 function renderAnnouncements() {
+
   const activeRoot =
     $("announcement-active");
+
 
   const root =
     $("announcements-list");
 
+
   if (!root) {
     return;
   }
+
 
   const active =
     state.announcements.find(
       isAnnouncementCurrentlyActive
     );
 
+
   if (activeRoot) {
+
     activeRoot.innerHTML =
       active
         ? `
+
           <article class="announcement-active-card">
 
             <div>
@@ -2935,14 +3846,19 @@ function renderAnnouncements() {
               </span>
 
               <h3>
-                ${esc(active.title)}
+                ${esc(
+                  active.title
+                )}
               </h3>
 
               <p>
-                ${esc(active.message)}
+                ${esc(
+                  active.message
+                )}
               </p>
 
             </div>
+
 
             <button
               class="ghost-btn"
@@ -2955,15 +3871,21 @@ function renderAnnouncements() {
             </button>
 
           </article>
+
         `
         : `
+
           <div class="announcement-empty">
             No hay ningún aviso activo.
           </div>
+
         `;
+
   }
 
+
   if (!state.announcements.length) {
+
     root.innerHTML = `
       <div class="empty-state">
         No hay avisos creados.
@@ -2973,13 +3895,16 @@ function renderAnnouncements() {
     return;
   }
 
+
   root.innerHTML =
     state.announcements
       .map((item) => {
+
         const activeNow =
           isAnnouncementCurrentlyActive(
             item
           );
+
 
         const expired =
           item.expires_at &&
@@ -2988,7 +3913,9 @@ function renderAnnouncements() {
           ).getTime() <=
             Date.now();
 
+
         return `
+
           <article class="announcement-card">
 
             <div class="announcement-card-main">
@@ -3001,6 +3928,7 @@ function renderAnnouncements() {
                     "Sin título"
                   )}
                 </strong>
+
 
                 <span
                   class="announcement-status ${
@@ -3022,13 +3950,17 @@ function renderAnnouncements() {
 
               </div>
 
+
               <p>
                 ${esc(
-                  item.message || ""
+                  item.message ||
+                  ""
                 )}
               </p>
 
+
               <small>
+
                 Publicado:
                 ${esc(
                   fmt(
@@ -3045,23 +3977,30 @@ function renderAnnouncements() {
                       )}`
                     : ""
                 }
+
               </small>
 
             </div>
+
 
             <div class="announcement-actions">
 
               <button
                 class="ghost-btn edit-announcement"
-                data-id="${esc(item.id)}"
+                data-id="${esc(
+                  item.id
+                )}"
                 type="button"
               >
                 Editar
               </button>
 
+
               <button
                 class="ghost-btn toggle-announcement"
-                data-id="${esc(item.id)}"
+                data-id="${esc(
+                  item.id
+                )}"
                 type="button"
               >
                 ${
@@ -3071,9 +4010,12 @@ function renderAnnouncements() {
                 }
               </button>
 
+
               <button
                 class="danger-btn delete-announcement"
-                data-id="${esc(item.id)}"
+                data-id="${esc(
+                  item.id
+                )}"
                 type="button"
               >
                 Eliminar
@@ -3082,12 +4024,16 @@ function renderAnnouncements() {
             </div>
 
           </article>
+
         `;
+
       })
       .join("");
 
+
   qsa(".edit-announcement").forEach(
     (b) => {
+
       b.addEventListener(
         "click",
         () =>
@@ -3095,11 +4041,14 @@ function renderAnnouncements() {
             b.dataset.id
           )
       );
+
     }
   );
 
+
   qsa("[data-edit-announcement]").forEach(
     (b) => {
+
       b.addEventListener(
         "click",
         () =>
@@ -3107,11 +4056,14 @@ function renderAnnouncements() {
             b.dataset.editAnnouncement
           )
       );
+
     }
   );
 
+
   qsa(".toggle-announcement").forEach(
     (b) => {
+
       b.addEventListener(
         "click",
         () =>
@@ -3119,11 +4071,14 @@ function renderAnnouncements() {
             b.dataset.id
           )
       );
+
     }
   );
 
+
   qsa(".delete-announcement").forEach(
     (b) => {
+
       b.addEventListener(
         "click",
         () =>
@@ -3131,8 +4086,10 @@ function renderAnnouncements() {
             b.dataset.id
           )
       );
+
     }
   );
+
 }
 
 
@@ -3141,29 +4098,37 @@ function renderAnnouncements() {
 // ============================================================
 
 async function saveAnnouncement(event) {
+
   event.preventDefault();
+
 
   const status =
     $("announcement-status");
+
 
   const title =
     $("a-title")
       ?.value
       .trim();
 
+
   const message =
     $("a-message")
       ?.value
       .trim();
 
+
   const expiresRaw =
     $("a-expires")?.value;
+
 
   const isActive =
     $("a-active")
       ?.checked !== false;
 
+
   if (!title || !message) {
+
     if (status) {
       status.textContent =
         "Completa título y mensaje.";
@@ -3172,15 +4137,21 @@ async function saveAnnouncement(event) {
     return;
   }
 
+
   if (status) {
     status.textContent =
       "Guardando aviso…";
   }
 
+
   const payload = {
+
     title,
+
     message,
-    is_active: isActive,
+
+    is_active:
+      isActive,
 
     expires_at:
       expiresRaw
@@ -3195,17 +4166,23 @@ async function saveAnnouncement(event) {
     metadata: {
       source: "admin"
     }
+
   };
 
+
   try {
+
     const wasEditing =
       Boolean(
         state.editingAnnouncement
       );
 
+
     let error;
 
+
     if (state.editingAnnouncement) {
+
       ({
         error
       } =
@@ -3213,13 +4190,16 @@ async function saveAnnouncement(event) {
           .from(
             "remote_announcements"
           )
-          .update(payload)
+          .update(
+            payload
+          )
           .eq(
             "id",
             state.editingAnnouncement
           ));
 
     } else {
+
       ({
         error
       } =
@@ -3227,17 +4207,24 @@ async function saveAnnouncement(event) {
           .from(
             "remote_announcements"
           )
-          .insert(payload));
+          .insert(
+            payload
+          ));
+
     }
+
 
     if (error) {
       throw error;
     }
 
+
     closeAnnouncement();
+
 
     await loadAnnouncements();
     await loadOverview();
+
 
     toast(
       wasEditing
@@ -3246,21 +4233,26 @@ async function saveAnnouncement(event) {
       "success"
     );
 
+
   } catch (error) {
+
     console.error(
       "ANNOUNCEMENT SAVE ERROR:",
       error
     );
+
 
     if (status) {
       status.textContent =
         "No se pudo guardar. Revisa RLS y permisos de admin.";
     }
 
+
     toast(
       "No se pudo guardar el aviso.",
       "error"
     );
+
   }
 }
 
@@ -3270,6 +4262,7 @@ async function saveAnnouncement(event) {
 // ============================================================
 
 async function toggleAnnouncement(id) {
+
   const item =
     state.announcements.find(
       (x) =>
@@ -3277,9 +4270,11 @@ async function toggleAnnouncement(id) {
         String(id)
     );
 
+
   if (!item) {
     return;
   }
+
 
   const {
     error
@@ -3295,22 +4290,28 @@ async function toggleAnnouncement(id) {
         id
       );
 
+
   if (error) {
+
     console.error(
       "ANNOUNCEMENT TOGGLE ERROR:",
       error
     );
+
 
     toast(
       "No se pudo cambiar el estado.",
       "error"
     );
 
+
     return;
   }
 
+
   await loadAnnouncements();
   await loadOverview();
+
 
   toast(
     item.is_active === false
@@ -3326,6 +4327,7 @@ async function toggleAnnouncement(id) {
 // ============================================================
 
 async function deleteAnnouncement(id) {
+
   if (
     !window.confirm(
       "¿Eliminar este aviso?"
@@ -3334,33 +4336,42 @@ async function deleteAnnouncement(id) {
     return;
   }
 
+
   const {
     error
   } =
     await supabase
-      .from("remote_announcements")
+      .from(
+        "remote_announcements"
+      )
       .delete()
       .eq(
         "id",
         id
       );
 
+
   if (error) {
+
     console.error(
       "ANNOUNCEMENT DELETE ERROR:",
       error
     );
+
 
     toast(
       "No se pudo eliminar el aviso.",
       "error"
     );
 
+
     return;
   }
 
+
   await loadAnnouncements();
   await loadOverview();
+
 
   toast(
     "Aviso eliminado.",
@@ -3374,9 +4385,11 @@ async function deleteAnnouncement(id) {
 // ============================================================
 
 function startAnnouncementRealtime() {
+
   if (state.announcementChannel) {
     return;
   }
+
 
   state.announcementChannel =
     supabase
@@ -3392,32 +4405,45 @@ function startAnnouncementRealtime() {
             "remote_announcements"
         },
         () => {
+
           loadAnnouncements();
           loadOverview();
+
         }
       )
       .subscribe(
         (status) => {
+
           if (
-            status === "SUBSCRIBED"
+            status ===
+            "SUBSCRIBED"
           ) {
+
             setConnectionState(
               true,
               "Supabase conectado"
             );
+
           }
+
         }
       );
 }
 
+
 async function stopAnnouncementRealtime() {
-  if (!state.announcementChannel) {
+
+  if (
+    !state.announcementChannel
+  ) {
     return;
   }
+
 
   await supabase.removeChannel(
     state.announcementChannel
   );
+
 
   state.announcementChannel =
     null;
@@ -3432,23 +4458,28 @@ function setConnectionState(
   online,
   label = "Supabase"
 ) {
+
   const pill =
     document.querySelector(
       ".connection-pill"
     );
 
+
   if (!pill) {
     return;
   }
+
 
   pill.classList.toggle(
     "offline",
     !online
   );
 
+
   pill.innerHTML =
     `<span></span>${esc(label)}`;
 }
+
 
 window.addEventListener(
   "online",
@@ -3458,6 +4489,7 @@ window.addEventListener(
       "Supabase conectado"
     )
 );
+
 
 window.addEventListener(
   "offline",
@@ -3475,6 +4507,7 @@ window.addEventListener(
 
 ensureAnnouncementUI();
 
+
 setConnectionState(
   navigator.onLine,
   navigator.onLine
@@ -3490,11 +4523,14 @@ setConnectionState(
 document.addEventListener(
   "keydown",
   (event) => {
+
     if (event.key !== "Escape") {
       return;
     }
 
+
     closeMobileMenu();
+
 
     if (
       !versionModal
@@ -3502,8 +4538,11 @@ document.addEventListener(
           "hidden"
         )
     ) {
+
       closeVersionModal();
+
     }
+
 
     if (
       !$("announcement-modal")
@@ -3511,8 +4550,11 @@ document.addEventListener(
           "hidden"
         )
     ) {
+
       closeAnnouncement();
+
     }
+
   }
 );
 
@@ -3531,21 +4573,26 @@ view("overview");
 window.addEventListener(
   "unhandledrejection",
   (event) => {
+
     console.error(
       "UNHANDLED PROMISE:",
       event.reason
     );
+
   }
 );
+
 
 window.addEventListener(
   "error",
   (event) => {
+
     console.error(
       "GLOBAL ERROR:",
       event.error ||
       event.message
     );
+
   }
 );
 
