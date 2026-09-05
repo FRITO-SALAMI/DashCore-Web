@@ -1,6 +1,7 @@
 {
   "cleanUrls": false,
   "trailingSlash": false,
+
   "headers": [
     {
       "source": "/src/assets/(.*)",
@@ -28,6 +29,33 @@
           "value": "public, max-age=86400"
         }
       ]
+    }
+  ],
+
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/disenos",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/interior",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/conexion",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/descargar",
+      "destination": "/index.html"
     }
   ]
 }

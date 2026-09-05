@@ -1,3 +1,4 @@
+html
 <!doctype html>
 
 <html lang="es">
@@ -179,21 +180,22 @@
   <!-- ============================== HEADER ============================== -->
 
   <header class="topbar">
-    <a class="brand" href="#inicio" aria-label="DashCore inicio">
+    <a class="brand" href="/" data-route data-target="#inicio" aria-label="DashCore inicio">
       <img src="./src/assets/logo.png" class="brand-logo" alt="DashCore">
       <span>Dash<span>Core</span></span>
     </a>
 
 <nav aria-label="Principal">
-  <a href="#inicio">Inicio</a>
-  <a href="#laboratorio">Dashboard</a>
-  <a href="#tableros">Diseños</a>
-  <a href="#conexion">Conexión</a>
-  <a href="#descargar">Descargar</a>
+  <a href="/" data-route data-target="#inicio">Inicio</a>
+  <a href="/dashboard" data-route data-target="#laboratorio">Dashboard</a>
+  <a href="/disenos" data-route data-target="#tableros">Diseños</a>
+  <a href="/interior" data-route data-target="#interior">Interior</a>
+  <a href="/conexion" data-route data-target="#conexion">Conexión</a>
+  <a href="/descargar" data-route data-target="#descargar">Descargar</a>
   <a href="Actualizaciones.html">Actualizaciones</a>
 </nav>
 
-<a class="nav-download" href="#descargar">Descargar <span>↓</span></a>
+<a class="nav-download" href="/descargar" data-route data-target="#descargar">Descargar <span>↓</span></a>
 
   </header>
 
@@ -216,8 +218,8 @@
     </p>
 
     <div class="hero-actions">
-      <a href="#descargar" class="button primary">Descargar DashCore <span>↓</span></a>
-      <a href="#laboratorio" class="button glass">Explorar dashboard <span>↘</span></a>
+      <a href="/descargar" data-route data-target="#descargar" class="button primary">Descargar DashCore <span>↓</span></a>
+      <a href="/dashboard" data-route data-target="#laboratorio" class="button glass">Explorar dashboard <span>↘</span></a>
     </div>
 
     <div class="hero-specs">
@@ -478,10 +480,50 @@
   </div>
 </section>
 
+<!-- ============================== INTERIOR DEL VEHÍCULO ============================== -->
+<section class="interior-section" id="interior">
+  <div class="section-head" data-reveal>
+    <div class="section-label">03 / INSTALADO</div>
+    <div class="section-index">DASHCORE EN VIVO</div>
+  </div>
+
+  <div class="section-title" data-reveal>
+    <h2>Hecho para vivir<br><strong>dentro de tu vehículo.</strong></h2>
+    <p>
+      DashCore no es solo una app: es la pantalla que va a acompañarte
+      cada vez que enciendes el motor. Así se ve instalado en un
+      Android real, dentro de un vehículo real.
+    </p>
+  </div>
+
+ <div class="interior-gallery" data-reveal="stagger">
+  <figure class="interior-item interior-item--wide">
+    <img src="./src/assets/interior-01.png" alt="DashCore instalado en la pantalla central de un vehículo" loading="lazy">
+    <figcaption><b>Pantalla central</b><span>En tablet Android de a bordo</span></figcaption>
+  </figure>
+
+  <figure class="interior-item">
+    <img src="./src/assets/interior-02.png" alt="Vista de DashCore desde el asiento del conductor" loading="lazy">
+    <figcaption><b>Vista del conductor</b><span>Legible al primer vistazo</span></figcaption>
+  </figure>
+
+  <figure class="interior-item">
+    <img src="./src/assets/interior-03.png" alt="DashCore funcionando de noche dentro del vehículo" loading="lazy">
+    <figcaption><b>Carretera</b><span>Bajo consumo de brillo, cero distracción</span></figcaption>
+  </figure>
+
+  <figure class="interior-item">
+    <img src="./src/assets/interior-04.png" alt="Detalle del adaptador OBD2 conectado bajo el volante" loading="lazy">
+    <figcaption><b>Conexión OBD2</b><span>Instalación discreta bajo el tablero</span></figcaption>
+  </figure>
+</div>
+
+</section>
+
 <!-- ============================== CONEXIÓN ============================== -->
 <section class="simple-section" id="conexion">
   <div class="section-head" data-reveal>
-    <div class="section-label">03 / CONEXIÓN</div>
+    <div class="section-label">04 / CONEXIÓN</div>
     <div class="section-index">OBD2 + ANDROID</div>
   </div>
 
@@ -507,24 +549,24 @@
 <!-- ============================== DESCARGAR ============================== -->
 <section class="download-section" id="descargar">
   <div class="download-content" data-reveal>
-    <span class="section-label">04 / DESCARGAR</span>
+    <span class="section-label">05 / DESCARGAR</span>
     <h2>Lleva DashCore<br><strong>a tu vehículo.</strong></h2>
     <p>Elige la versión que corresponde a tu dispositivo.</p>
 
     <div class="download-buttons">
       <!-- ARM64 — 64 bits -->
-      <a class="download-card phone" href="https://github.com/FRITO-SALAMI/DashCore/releases/download/0.0.2/Dashcore64bitsV001.apk" download="Dashcore64bitsV001.apk">
+      <a class="download-card phone" href="https://github.com/FRITO-SALAMI/DashCore/releases/download/0.0.3/DashCore64Bits.apk" download="DashCore64Bits.apk">
         <div class="download-icon"><span>▯</span></div>
         <div class="download-card-text">
           <small>ARM64 — 64 bits</small>
-          <strong>🚀 DashCore para 64 Celulares</strong>
+          <strong>🚀 DashCore para Mobiles</strong>
           <span>Versión 64 bits</span>
         </div>
         <div class="download-arrow">↓</div>
       </a>
 
       <!-- ARM32 — 32 bits -->
-      <a class="download-card radio" href="https://github.com/FRITO-SALAMI/DashCore/releases/download/0.0.2/Dashcore32bitsV001.apk" download="Dashcore32bitsV001.apk">
+      <a class="download-card radio" href="https://github.com/FRITO-SALAMI/DashCore/releases/download/0.0.3/DashCore32Bits.apk" download="DashCore32Bits.apk">
         <div class="radio-glow"></div>
         <div class="download-icon"><span>▣</span></div>
         <div class="download-card-text">
@@ -547,7 +589,7 @@
 
 <div class="footer-main">
   <div class="footer-brand-block">
-    <a class="footer-brand" href="#inicio">
+    <a class="footer-brand" href="/" data-route data-target="#inicio">
       <img src="./src/assets/logo.png" alt="DashCore" class="footer-logo">
       <span>Dash<span>Core</span></span>
     </a>
@@ -557,11 +599,12 @@
 
   <div class="footer-column">
     <span class="footer-heading">DASHCORE</span>
-    <a href="#inicio">Inicio</a>
-    <a href="#laboratorio">Dashboard</a>
-    <a href="#tableros">Diseños</a>
-    <a href="#conexion">Conexión</a>
-    <a href="#descargar">Descargar</a>
+    <a href="/" data-route data-target="#inicio">Inicio</a>
+    <a href="/dashboard" data-route data-target="#laboratorio">Dashboard</a>
+    <a href="/disenos" data-route data-target="#tableros">Diseños</a>
+    <a href="/interior" data-route data-target="#interior">Interior</a>
+    <a href="/conexion" data-route data-target="#conexion">Conexión</a>
+    <a href="/descargar" data-route data-target="#descargar">Descargar</a>
     <a href="Actualizaciones.html">Actualizaciones</a>
   </div>
 
@@ -576,7 +619,7 @@
   <div class="footer-download">
     <span class="footer-heading">EMPIEZA AHORA</span>
     <p>Convierte tu Android en<br>el tablero de tu vehículo.</p>
-    <a href="#descargar" class="footer-button">DESCARGAR DASHCORE <span>↗</span></a>
+    <a href="/descargar" data-route data-target="#descargar" class="footer-button">DESCARGAR DASHCORE <span>↗</span></a>
   </div>
 </div>
 
@@ -615,3 +658,4 @@
 </body>
 
 </html>
+

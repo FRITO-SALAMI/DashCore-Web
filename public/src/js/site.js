@@ -32,6 +32,140 @@
   window.addEventListener("resize", onScroll);
 
   /* =====================================================
+     NAVEGACIÓN CON URLS LIMPIAS (sin #anclas)
+     /  /dashboard  /disenos  /interior  /conexion  /descargar
+  ===================================================== */
+
+  var ROUTES = [
+    { path: "/", target: "#inicio" },
+    { path: "/dashboard", target: "#laboratorio" },
+    { path: "/disenos", target: "#tableros" },
+    { path: "/interior", target: "#interior" },
+    { path: "/conexion", target: "#conexion" },
+    { path: "/descargar", target: "#descargar" },
+  ];
+
+  var routeLinks = document.querySelectorAll("[data-route]");
+  var sectionEls = {};
+
+  ROUTES.forEach(function (r) {
+    var el = document.querySelector(r.target);
+    if (el) sectionEls[r.target] = el;
+  });
+
+  function activeLinkPath(path) {
+    routeLinks.forEach(function (link) {
+      var linkPath = link.getAttribute("href");
+      link.classList.toggle("is-active", linkPath === path);
+    });
+  }
+
+  // Marca visualmente en la barra de progreso/nav qué sección está activa
+  var sectionObserver = null;
+
+  function setupSectionObserver() {
+    if (!("IntersectionObserver" in window)) return;
+
+    var targets = ROUTES.map(function (r) {
+      return sectionEls[r.target];
+    }).filter(Boolean);
+
+    if (!targets.length) return;
+
+    sectionObserver = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+
+          var route = ROUTES.find(function (r) {
+            return sectionEls[r.target] === entry.target;
+          });
+
+          if (route) {
+            activeLinkPath(route.path);
+            // Actualiza la URL sin recargar ni saltar el scroll
+            if (location.pathname !== route.path) {
+              history.replaceState(
+                { path: route.path },
+                "",
+                route.path
+              );
+            }
+          }
+        });
+      },
+      { threshold: 0.5, rootMargin: "-10% 0px -45% 0px" }
+    );
+
+    targets.forEach(function (t) {
+      sectionObserver.observe(t);
+    });
+  }
+
+  function scrollToTarget(targetSelector, smooth) {
+    var el = document.querySelector(targetSelector);
+    if (!el) return;
+
+    el.scrollIntoView({
+      behavior: smooth && !reduceMotion ? "smooth" : "auto",
+      block: "start",
+    });
+  }
+
+  function navigateTo(path, options) {
+    options = options || {};
+    var route =
+      ROUTES.find(function (r) {
+        return r.path === path;
+      }) || ROUTES[0];
+
+    scrollToTarget(route.target, options.smooth !== false);
+    activeLinkPath(route.path);
+
+    if (options.pushState !== false) {
+      history.pushState({ path: route.path }, "", route.path);
+    }
+  }
+
+  routeLinks.forEach(function (link) {
+    link.addEventListener("click", function (e) {
+      var path = link.getAttribute("href");
+      var isRoute = ROUTES.some(function (r) {
+        return r.path === path;
+      });
+
+      if (!isRoute) return;
+
+      e.preventDefault();
+      navigateTo(path, { smooth: true, pushState: true });
+    });
+  });
+
+  window.addEventListener("popstate", function () {
+    navigateTo(location.pathname, { smooth: true, pushState: false });
+  });
+
+  // Al cargar: si la URL ya apunta a una ruta limpia (/descargar, etc.)
+  // saltamos directo a esa sección sin animación.
+  (function initialRoute() {
+    var initialPath = location.pathname.replace(/\/$/, "") || "/";
+    var match = ROUTES.find(function (r) {
+      return r.path === initialPath;
+    });
+
+    if (match && match.path !== "/") {
+      // Espera a que el layout esté listo para medir posiciones correctas
+      window.requestAnimationFrame(function () {
+        navigateTo(match.path, { smooth: false, pushState: false });
+        setupSectionObserver();
+      });
+    } else {
+      activeLinkPath("/");
+      setupSectionObserver();
+    }
+  })();
+
+  /* =====================================================
      RELOJ EN VIVO
   ===================================================== */
 
