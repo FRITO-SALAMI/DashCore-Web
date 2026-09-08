@@ -62,130 +62,372 @@
   <!-- Controles Gas / Brake integrados al dashboard -->
 
   <style>
-    .real-dashboard { overflow: visible !important; }
-    .dashboard-screen { position: relative !important; overflow: hidden !important; }
+    .real-dashboard {
+      overflow: visible !important;
+    }
+
+    .dashboard-screen {
+      position: relative !important;
+      overflow: hidden !important;
+    }
 
     .dash-controls {
-      position: absolute !important; right: 12px !important; bottom: 12px !important;
-      display: flex !important; align-items: center !important; justify-content: flex-end !important;
-      gap: 10px !important; padding: 7px !important; width: auto !important; min-height: 0 !important;
-      box-sizing: border-box !important; border: 1px solid rgba(45,174,255,.16) !important; border-radius: 13px !important;
-      background: rgba(3,8,12,.88) !important; backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important;
+      position: absolute !important;
+      right: 12px !important;
+      bottom: 12px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: flex-end !important;
+      gap: 10px !important;
+      padding: 7px !important;
+      width: auto !important;
+      min-height: 0 !important;
+      box-sizing: border-box !important;
+      border: 1px solid rgba(45,174,255,.16) !important;
+      border-radius: 13px !important;
+      background: rgba(3,8,12,.88) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
       box-shadow: 0 10px 28px rgba(0,0,0,.42), inset 0 0 20px rgba(45,174,255,.035) !important;
-      z-index: 1000 !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important;
+      z-index: 1000 !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
     }
 
     .dash-controls-readout {
-      display: flex !important; flex-direction: column !important; align-items: flex-end !important;
-      justify-content: center !important; gap: 1px !important; min-width: 58px !important; visibility: visible !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-end !important;
+      justify-content: center !important;
+      gap: 1px !important;
+      min-width: 58px !important;
+      visibility: visible !important;
     }
 
     .dash-controls-readout small {
-      font-family: "Inter", sans-serif !important; font-size: 7px !important; font-weight: 800 !important;
-      letter-spacing: .12em !important; color: rgba(215,231,245,.42) !important;
+      font-family: "Inter", sans-serif !important;
+      font-size: 7px !important;
+      font-weight: 800 !important;
+      letter-spacing: .12em !important;
+      color: rgba(215,231,245,.42) !important;
     }
 
     .dash-controls-readout strong {
-      font-family: "Orbitron", sans-serif !important; font-size: 12px !important; line-height: 1.1 !important; color: #eaf4ff !important;
+      font-family: "Orbitron", sans-serif !important;
+      font-size: 12px !important;
+      line-height: 1.1 !important;
+      color: #eaf4ff !important;
     }
 
     .dash-controls-readout span {
-      font-family: "Inter", sans-serif !important; font-size: 7px !important; font-weight: 800 !important;
-      letter-spacing: .08em !important; color: rgba(215,231,245,.45) !important;
+      font-family: "Inter", sans-serif !important;
+      font-size: 7px !important;
+      font-weight: 800 !important;
+      letter-spacing: .08em !important;
+      color: rgba(215,231,245,.45) !important;
     }
 
     .dash-controls-readout span.active {
-      color: #2daeff !important; text-shadow: 0 0 10px rgba(45,174,255,.65) !important;
+      color: #2daeff !important;
+      text-shadow: 0 0 10px rgba(45,174,255,.65) !important;
     }
 
     .dash-pedals {
-      display: flex !important; flex-direction: row !important; align-items: center !important;
-      gap: 7px !important; flex-shrink: 0 !important; visibility: visible !important; opacity: 1 !important;
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      gap: 7px !important;
+      flex-shrink: 0 !important;
+      visibility: visible !important;
+      opacity: 1 !important;
     }
 
     .dash-pedal {
-      position: relative !important; display: flex !important; flex-direction: column !important;
-      align-items: center !important; justify-content: center !important;
-      width: 55px !important; height: 64px !important; min-width: 55px !important; min-height: 64px !important;
-      padding: 7px 4px !important; box-sizing: border-box !important; border-radius: 11px !important;
-      border: 1px solid rgba(45,174,255,.4) !important; background: linear-gradient(180deg, #10202e, #060a0f) !important;
-      color: #eaf4ff !important; cursor: pointer !important; overflow: hidden !important;
-      -webkit-tap-highlight-color: transparent !important; user-select: none !important; -webkit-user-select: none !important;
-      touch-action: none !important; visibility: visible !important; opacity: 1 !important; z-index: 1001 !important; font: inherit !important;
+      position: relative !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 55px !important;
+      height: 64px !important;
+      min-width: 55px !important;
+      min-height: 64px !important;
+      padding: 7px 4px !important;
+      box-sizing: border-box !important;
+      border-radius: 11px !important;
+      border: 1px solid rgba(45,174,255,.4) !important;
+      background: linear-gradient(180deg, #10202e, #060a0f) !important;
+      color: #eaf4ff !important;
+      cursor: pointer !important;
+      overflow: hidden !important;
+      -webkit-tap-highlight-color: transparent !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      touch-action: none !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      z-index: 1001 !important;
+      font: inherit !important;
     }
 
     .dash-pedal:active,
-    .dash-pedal.pressed { transform: scale(.96) !important; }
+    .dash-pedal.pressed {
+      transform: scale(.96) !important;
+    }
 
     .dash-pedal.brake {
-      border-color: rgba(255,90,90,.52) !important; background: linear-gradient(180deg, rgba(52,18,22,.98), rgba(10,7,9,.98)) !important;
+      border-color: rgba(255,90,90,.52) !important;
+      background: linear-gradient(180deg, rgba(52,18,22,.98), rgba(10,7,9,.98)) !important;
     }
 
     .dash-pedal.brake:active,
     .dash-pedal.brake.pressed {
-      border-color: rgba(255,90,90,.95) !important; box-shadow: 0 0 18px rgba(255,90,90,.32), inset 0 0 18px rgba(255,90,90,.08) !important;
+      border-color: rgba(255,90,90,.95) !important;
+      box-shadow: 0 0 18px rgba(255,90,90,.32), inset 0 0 18px rgba(255,90,90,.08) !important;
     }
 
     .dash-pedal.gas {
-      border-color: rgba(45,174,255,.55) !important; background: linear-gradient(180deg, rgba(11,35,50,.98), rgba(5,10,15,.98)) !important;
+      border-color: rgba(45,174,255,.55) !important;
+      background: linear-gradient(180deg, rgba(11,35,50,.98), rgba(5,10,15,.98)) !important;
     }
 
     .dash-pedal.gas:active,
     .dash-pedal.gas.pressed {
-      border-color: rgba(45,174,255,.98) !important; box-shadow: 0 0 18px rgba(45,174,255,.36), inset 0 0 18px rgba(45,174,255,.08) !important;
+      border-color: rgba(45,174,255,.98) !important;
+      box-shadow: 0 0 18px rgba(45,174,255,.36), inset 0 0 18px rgba(45,174,255,.08) !important;
     }
 
     .pedal-fill {
-      position: absolute !important; left: 0 !important; right: 0 !important; bottom: 0 !important; height: 0% !important;
+      position: absolute !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      height: 0% !important;
       background: linear-gradient(180deg, rgba(45,174,255,.88), rgba(45,174,255,.16)) !important;
-      box-shadow: 0 0 18px rgba(45,174,255,.48) !important; z-index: 1 !important; pointer-events: none !important; transition: height .04s linear !important;
+      box-shadow: 0 0 18px rgba(45,174,255,.48) !important;
+      z-index: 1 !important;
+      pointer-events: none !important;
+      transition: height .04s linear !important;
     }
 
     .pedal-icon {
-      position: relative !important; z-index: 2 !important; font-size: 15px !important; line-height: 1 !important;
-      color: rgba(235,246,255,.9) !important; pointer-events: none !important;
+      position: relative !important;
+      z-index: 2 !important;
+      font-size: 15px !important;
+      line-height: 1 !important;
+      color: rgba(235,246,255,.9) !important;
+      pointer-events: none !important;
     }
 
     .pedal-text {
-      position: relative !important; z-index: 2 !important; margin-top: 5px !important;
-      font-family: "Orbitron", sans-serif !important; font-size: 8px !important; font-weight: 800 !important;
-      letter-spacing: .08em !important; color: #eaf4ff !important; pointer-events: none !important;
+      position: relative !important;
+      z-index: 2 !important;
+      margin-top: 5px !important;
+      font-family: "Orbitron", sans-serif !important;
+      font-size: 8px !important;
+      font-weight: 800 !important;
+      letter-spacing: .08em !important;
+      color: #eaf4ff !important;
+      pointer-events: none !important;
     }
 
-    /* Tablet / móvil */
+    /* ============================================================
+       DESCARGAS — INTERACCIÓN
+       ============================================================ */
+
+    .download-buttons {
+      display: grid !important;
+      gap: 14px !important;
+    }
+
+    .download-card {
+      position: relative !important;
+      overflow: hidden !important;
+      isolation: isolate !important;
+      transform: translateZ(0) !important;
+      transition:
+        transform .25s ease,
+        border-color .25s ease,
+        box-shadow .25s ease,
+        background .25s ease !important;
+    }
+
+    .download-card::before {
+      content: "" !important;
+      position: absolute !important;
+      inset: 0 !important;
+      background: linear-gradient(
+        110deg,
+        transparent 20%,
+        rgba(255,255,255,.07) 48%,
+        transparent 76%
+      ) !important;
+      transform: translateX(-120%) !important;
+      transition: transform .7s ease !important;
+      pointer-events: none !important;
+      z-index: 0 !important;
+    }
+
+    .download-card:hover {
+      transform: translateY(-4px) !important;
+      border-color: rgba(45,174,255,.65) !important;
+      box-shadow:
+        0 14px 35px rgba(0,0,0,.32),
+        0 0 25px rgba(45,174,255,.10) !important;
+    }
+
+    .download-card:hover::before {
+      transform: translateX(120%) !important;
+    }
+
+    .download-card:active {
+      transform: translateY(-1px) scale(.985) !important;
+    }
+
+    .download-card-text,
+    .download-icon,
+    .download-arrow {
+      position: relative !important;
+      z-index: 2 !important;
+    }
+
+    .download-card-text small {
+      opacity: .62 !important;
+      letter-spacing: .12em !important;
+    }
+
+    .download-card-text strong {
+      display: block !important;
+      margin-top: 3px !important;
+    }
+
+    .download-card-text span {
+      display: block !important;
+      margin-top: 4px !important;
+    }
+
+    .download-icon {
+      transition: transform .25s ease !important;
+    }
+
+    .download-card:hover .download-icon {
+      transform: translateY(-2px) scale(1.06) !important;
+    }
+
+    .download-arrow {
+      transition: transform .25s ease !important;
+    }
+
+    .download-card:hover .download-arrow {
+      transform: translateY(4px) !important;
+    }
+
+    .download-card.downloading {
+      pointer-events: none !important;
+    }
+
+    .download-card.downloading .download-arrow {
+      animation: dc-download-pulse .8s ease-in-out infinite !important;
+    }
+
+    .download-card.downloading .download-card-text strong::after {
+      content: " · PREPARANDO DESCARGA" !important;
+      font-size: .65em !important;
+      letter-spacing: .08em !important;
+      opacity: .7 !important;
+    }
+
+    @keyframes dc-download-pulse {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(5px); }
+    }
+
+    .download-note {
+      margin-top: 18px !important;
+      font-size: 12px !important;
+      line-height: 1.6 !important;
+      color: rgba(215,231,245,.52) !important;
+    }
+
+    .download-note strong {
+      color: rgba(215,231,245,.78) !important;
+    }
 
     @media (max-width: 700px) {
-      .dash-controls { right: 8px !important; bottom: 8px !important; gap: 6px !important; padding: 6px !important; border-radius: 12px !important; }
-      .dash-controls-readout { min-width: 48px !important; }
-      .dash-controls-readout small { font-size: 6px !important; }
-      .dash-controls-readout strong { font-size: 10px !important; }
-      .dash-controls-readout span { font-size: 6px !important; }
-      .dash-pedals { gap: 5px !important; }
-      .dash-pedal { width: 50px !important; height: 58px !important; min-width: 50px !important; min-height: 58px !important; border-radius: 10px !important; }
+      .dash-controls {
+        right: 8px !important;
+        bottom: 8px !important;
+        gap: 6px !important;
+        padding: 6px !important;
+        border-radius: 12px !important;
+      }
+
+      .dash-controls-readout {
+        min-width: 48px !important;
+      }
+
+      .dash-controls-readout small {
+        font-size: 6px !important;
+      }
+
+      .dash-controls-readout strong {
+        font-size: 10px !important;
+      }
+
+      .dash-controls-readout span {
+        font-size: 6px !important;
+      }
+
+      .dash-pedals {
+        gap: 5px !important;
+      }
+
+      .dash-pedal {
+        width: 50px !important;
+        height: 58px !important;
+        min-width: 50px !important;
+        min-height: 58px !important;
+        border-radius: 10px !important;
+      }
     }
 
     @media (max-width: 480px) {
-      .dash-controls-readout { display: none !important; }
-      .dash-controls { right: 7px !important; bottom: 7px !important; }
-      .dash-pedal { width: 48px !important; height: 58px !important; min-width: 48px !important; min-height: 58px !important; }
+      .dash-controls-readout {
+        display: none !important;
+      }
+
+      .dash-controls {
+        right: 7px !important;
+        bottom: 7px !important;
+      }
+
+      .dash-pedal {
+        width: 48px !important;
+        height: 58px !important;
+        min-width: 48px !important;
+        min-height: 58px !important;
+      }
     }
   </style>
 
 </head>
 
 <body>
+
   <div class="grain" aria-hidden="true"></div>
   <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
 
   <!-- ============================== HEADER ============================== -->
 
   <header class="topbar">
-    <a class="brand" href="/" data-route data-target="#inicio" aria-label="DashCore inicio">
-      <img src="./src/assets/logo.png" class="brand-logo" alt="DashCore">
-      <span>Dash<span>Core</span></span>
-    </a>
 
 ```
+<a class="brand" href="/" data-route data-target="#inicio" aria-label="DashCore inicio">
+  <img src="./src/assets/logo.png" class="brand-logo" alt="DashCore">
+  <span>Dash<span>Core</span></span>
+</a>
+
 <nav aria-label="Principal">
   <a href="/" data-route data-target="#inicio">Inicio</a>
   <a href="/dashboard" data-route data-target="#laboratorio">Dashboard</a>
@@ -196,7 +438,9 @@
   <a href="Actualizaciones.html">Actualizaciones</a>
 </nav>
 
-<a class="nav-download" href="/descargar" data-route data-target="#descargar">Descargar <span>↓</span></a>
+<a class="nav-download" href="/descargar" data-route data-target="#descargar">
+  Descargar <span>↓</span>
+</a>
 ```
 
   </header>
@@ -207,14 +451,21 @@
 <!-- ============================== HERO ============================== -->
 
 <section class="hero" id="inicio">
+
   <div class="hero-photo"></div>
   <div class="hero-photo-overlay"></div>
   <div class="hero-light"></div>
 
   <div class="hero-copy">
-    <div class="eyebrow"><span></span>DIGITAL VEHICLE SYSTEM</div>
 
-    <h1>Tu vehículo.<br><strong>Tu tablero.</strong></h1>
+    <div class="eyebrow">
+      <span></span>DIGITAL VEHICLE SYSTEM
+    </div>
+
+    <h1>
+      Tu vehículo.<br>
+      <strong>Tu tablero.</strong>
+    </h1>
 
     <p>
       Una nueva forma de ver tu vehículo.
@@ -223,20 +474,37 @@
     </p>
 
     <div class="hero-actions">
-      <a href="/descargar" data-route data-target="#descargar" class="button primary">Descargar DashCore <span>↓</span></a>
-      <a href="/dashboard" data-route data-target="#laboratorio" class="button glass">Explorar dashboard <span>↘</span></a>
+
+      <a href="/descargar"
+         data-route
+         data-target="#descargar"
+         class="button primary">
+        Descargar DashCore <span>↓</span>
+      </a>
+
+      <a href="/dashboard"
+         data-route
+         data-target="#laboratorio"
+         class="button glass">
+        Explorar dashboard <span>↘</span>
+      </a>
+
     </div>
 
     <div class="hero-specs">
-      <span>ANDROID</span><i></i>
-      <span>OBD2</span><i></i>
+      <span>ANDROID</span>
+      <i></i>
+      <span>OBD2</span>
+      <i></i>
       <span>REAL TIME</span>
     </div>
+
   </div>
 
   <!-- Hero cluster -->
 
   <div class="hero-cluster">
+
     <div class="cluster-top">
       <span class="cluster-time" id="dash-time">21:41</span>
       <div class="cluster-logo">DASHCORE</div>
@@ -250,11 +518,20 @@
       <div class="rpm-display">
         <div class="rpm-label">RPM x1000</div>
         <div class="rpm-arc"></div>
+
         <div class="rpm-scale">
-          <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
+          <span>1</span>
+          <span>2</span>
+          <span>3</span>
+          <span>4</span>
+          <span>5</span>
+          <span>6</span>
+          <span>7</span>
         </div>
+
         <div class="rpm-needle" id="rpm-needle"></div>
         <div class="cluster-center-dot"></div>
+
         <strong id="rpm-value">3.42</strong>
         <small>×1000</small>
       </div>
@@ -262,20 +539,34 @@
       <!-- Speed -->
 
       <div class="speed-display">
+
         <div class="speed-label">CURRENT SPEED</div>
+
         <strong id="speed-value">108</strong>
         <span>KM/H</span>
+
         <div class="speed-line"></div>
 
         <div class="drive-info">
-          <div><small>GEAR</small><strong>D</strong></div>
-          <div><small>RANGE</small><strong>412 KM</strong></div>
+
+          <div>
+            <small>GEAR</small>
+            <strong>D</strong>
+          </div>
+
+          <div>
+            <small>RANGE</small>
+            <strong>412 KM</strong>
+          </div>
+
         </div>
+
       </div>
 
       <!-- Temperature -->
 
       <div class="temp-display">
+
         <div class="temp-label">ENGINE TEMP</div>
 
         <div class="temp-ring">
@@ -283,15 +574,22 @@
           <strong id="temp-value">91°</strong>
           <small>NORMAL</small>
         </div>
+
       </div>
+
     </div>
 
     <!-- Vehicle info -->
 
     <div class="cluster-bottom">
+
       <div class="cluster-info">
         <span class="info-icon">⚡</span>
-        <div><small>BATTERY</small><strong id="battery">14.2 V</strong></div>
+
+        <div>
+          <small>BATTERY</small>
+          <strong id="battery">14.2 V</strong>
+        </div>
       </div>
 
       <div class="cluster-info">
@@ -299,8 +597,15 @@
 
         <div>
           <small>FUEL</small>
-          <strong><span id="fuel">78</span>%</strong>
-          <div class="fuel-progress"><b id="fuel-bar"></b></div>
+
+          <strong>
+            <span id="fuel">78</span>%
+          </strong>
+
+          <div class="fuel-progress">
+            <b id="fuel-bar"></b>
+          </div>
+
         </div>
       </div>
 
@@ -309,27 +614,44 @@
         <span class="warning blue"></span>
         <span class="warning orange"></span>
       </div>
+
     </div>
+
   </div>
 
   <div class="scroll-explorer">
     <span>EXPLORA EL DASHBOARD</span>
-    <div class="scroll-line"><i></i></div>
-    <div class="scroll-mouse"><b></b></div>
+
+    <div class="scroll-line">
+      <i></i>
+    </div>
+
+    <div class="scroll-mouse">
+      <b></b>
+    </div>
   </div>
+
 </section>
 
 <!-- ============================== LIVE DASHBOARD ============================== -->
 
 <section class="live-lab" id="laboratorio">
+
   <div class="lab-glow"></div>
   <div class="lab-grid"></div>
 
   <div class="lab-header" data-reveal>
-    <div>
-      <span class="section-label">01 / DASHBOARD LIVE</span>
 
-      <h2>Pisa el acelerador.<br><strong>Siente tu tablero cobrar vida.</strong></h2>
+    <div>
+
+      <span class="section-label">
+        01 / DASHBOARD LIVE
+      </span>
+
+      <h2>
+        Pisa el acelerador.<br>
+        <strong>Siente tu tablero cobrar vida.</strong>
+      </h2>
 
       <p class="lab-header-copy">
         Este no es un mockup estático.
@@ -338,9 +660,13 @@
         reaccionan en tiempo real, igual que
         dentro de tu vehículo.
       </p>
+
     </div>
 
-    <div class="live-status"><span></span>SISTEMA ACTIVO</div>
+    <div class="live-status">
+      <span></span>SISTEMA ACTIVO
+    </div>
+
   </div>
 
   <!-- Dashboard real -->
@@ -348,9 +674,19 @@
   <div class="real-dashboard" data-reveal>
 
     <div class="dashboard-topbar">
-      <div class="vehicle-name"><span></span>VEHICLE <strong>ONLINE</strong></div>
-      <div class="dashboard-time" id="live-clock">21:41:22</div>
-      <div class="gps">GPS <strong>CONNECTED</strong></div>
+
+      <div class="vehicle-name">
+        <span></span>VEHICLE <strong>ONLINE</strong>
+      </div>
+
+      <div class="dashboard-time" id="live-clock">
+        21:41:22
+      </div>
+
+      <div class="gps">
+        GPS <strong>CONNECTED</strong>
+      </div>
+
     </div>
 
     <!-- Dashboard screen -->
@@ -360,6 +696,7 @@
       <!-- RPM -->
 
       <div class="modern-gauge rpm-live draggable" style="left:5%;top:17%">
+
         <div class="gauge-title">ENGINE</div>
         <div class="modern-arc"></div>
         <div class="modern-ticks"></div>
@@ -371,100 +708,164 @@
           <span>RPM</span>
         </div>
 
-        <div class="gauge-footer">0 ───── 7</div>
+        <div class="gauge-footer">
+          0 ───── 7
+        </div>
+
       </div>
 
       <!-- Speed -->
 
       <div class="main-speed draggable" style="left:34%;top:7%">
-        <div class="speed-caption">DIGITAL SPEED</div>
+
+        <div class="speed-caption">
+          DIGITAL SPEED
+        </div>
+
         <strong id="live-speed">108</strong>
         <span>KM/H</span>
 
-        <div class="speed-progress"><b id="speed-progress"></b></div>
+        <div class="speed-progress">
+          <b id="speed-progress"></b>
+        </div>
 
         <div class="speed-details">
-          <div><small>GEAR</small><strong>D</strong></div>
-          <div><small>TRIP</small><strong>124.8</strong></div>
-          <div><small>AVG</small><strong>84</strong></div>
+
+          <div>
+            <small>GEAR</small>
+            <strong>D</strong>
+          </div>
+
+          <div>
+            <small>TRIP</small>
+            <strong>124.8</strong>
+          </div>
+
+          <div>
+            <small>AVG</small>
+            <strong>84</strong>
+          </div>
+
         </div>
+
       </div>
 
       <!-- Temperature -->
 
       <div class="modern-gauge temp-live draggable" style="left:72%;top:17%">
-        <div class="gauge-title">COOLANT</div>
+
+        <div class="gauge-title">
+          COOLANT
+        </div>
 
         <div class="temperature-ring">
+
           <b id="live-temp-ring"></b>
 
           <div>
             <strong id="live-temp">91°</strong>
             <span>NORMAL</span>
           </div>
+
         </div>
+
       </div>
 
       <!-- Battery -->
 
       <div class="vehicle-card draggable" style="left:12%;top:72%">
+
         <small>BATTERY</small>
         <strong id="live-battery">14.2 V</strong>
         <span class="stable">● STABLE</span>
+
       </div>
 
       <!-- Fuel -->
 
       <div class="vehicle-card fuel-card draggable" style="left:38%;top:72%">
+
         <small>FUEL LEVEL</small>
-        <strong><span id="live-fuel">78</span>%</strong>
-        <div class="large-fuel-bar"><b id="live-fuel-bar"></b></div>
+
+        <strong>
+          <span id="live-fuel">78</span>%
+        </strong>
+
+        <div class="large-fuel-bar">
+          <b id="live-fuel-bar"></b>
+        </div>
+
       </div>
 
       <!-- Odometer -->
 
       <div class="vehicle-card draggable" style="left:64%;top:72%">
+
         <small>ODOMETER</small>
         <strong>124842</strong>
         <span>KM</span>
+
       </div>
 
-      <div class="drag-message">ARRASTRA LOS ELEMENTOS</div>
+      <div class="drag-message">
+        ARRASTRA LOS ELEMENTOS
+      </div>
 
-      <!-- Controles integrados al dashboard -->
+      <!-- Controles -->
 
       <div class="dash-controls">
 
         <div class="dash-controls-readout">
+
           <small>THROTTLE</small>
-          <strong id="throttle-percent">0%</strong>
-          <span id="throttle-state">RALENTÍ</span>
+
+          <strong id="throttle-percent">
+            0%
+          </strong>
+
+          <span id="throttle-state">
+            RALENTÍ
+          </span>
+
         </div>
 
         <div class="dash-pedals">
 
-          <button type="button" class="dash-pedal brake" id="pedal-brake" aria-label="Frenar y volver a ralentí">
+          <button
+            type="button"
+            class="dash-pedal brake"
+            id="pedal-brake"
+            aria-label="Frenar y volver a ralentí">
+
             <span class="pedal-icon">⏻</span>
             <span class="pedal-text">BRAKE</span>
+
           </button>
 
-          <button type="button" class="dash-pedal gas" id="pedal-gas" aria-label="Mantener presionado para acelerar">
+          <button
+            type="button"
+            class="dash-pedal gas"
+            id="pedal-gas"
+            aria-label="Mantener presionado para acelerar">
+
             <span class="pedal-fill" id="pedal-fill"></span>
             <span class="pedal-icon">▲</span>
             <span class="pedal-text">GAS</span>
+
           </button>
 
         </div>
-      </div>
-    </div>
 
-    <!-- Dashboard status -->
+      </div>
+
+    </div>
 
     <div class="dashboard-bottom">
       <span>ECU<b></b></span>
       <span>OBD2<b></b></span>
       <span>LIVE TELEMETRY<b></b></span>
     </div>
+
   </div>
 
   <p class="lab-description" data-reveal>
@@ -473,6 +874,7 @@
     y usar el acelerador para ver cómo reacciona
     DashCore dentro de tu vehículo en tiempo real.
   </p>
+
 </section>
 
 <!-- ============================== DISEÑOS ============================== -->
@@ -485,59 +887,89 @@
   </div>
 
   <div class="section-title" data-reveal>
-    <h2>Tu vehículo.<br><strong>Tu estilo.</strong></h2>
+
+    <h2>
+      Tu vehículo.<br>
+      <strong>Tu estilo.</strong>
+    </h2>
 
     <p>
       Diferentes estilos para diferentes conductores.
       DashCore está diseñado para que tu tablero
       también sea parte de tu vehículo.
     </p>
+
   </div>
 
   <div class="dashboard-previews" data-reveal="stagger">
 
     <article>
+
       <div class="preview-image">
         <img src="./src/assets/dashboard-deportivo.png" alt="Dashboard deportivo">
         <span>01</span>
       </div>
 
-      <div><b>Deportivo</b><span>SPORT</span></div>
+      <div>
+        <b>Deportivo</b>
+        <span>SPORT</span>
+      </div>
+
     </article>
 
     <article>
+
       <div class="preview-image">
         <img src="./src/assets/dashboard-moderno.png" alt="Dashboard moderno">
         <span>02</span>
       </div>
 
-      <div><b>Moderno</b><span>MINIMAL</span></div>
+      <div>
+        <b>Moderno</b>
+        <span>MINIMAL</span>
+      </div>
+
     </article>
 
     <article>
+
       <div class="preview-image">
         <img src="./src/assets/dashboard-carrera.png" alt="Dashboard carrera">
         <span>03</span>
       </div>
 
-      <div><b>Carrera</b><span>RACE</span></div>
+      <div>
+        <b>Carrera</b>
+        <span>RACE</span>
+      </div>
+
     </article>
 
   </div>
+
 </section>
 
-<!-- ============================== INTERIOR DEL VEHÍCULO ============================== -->
+<!-- ============================== INTERIOR ============================== -->
 
 <section class="interior-section" id="interior">
 
   <div class="section-head" data-reveal>
-    <div class="section-label">03 / INSTALADO</div>
-    <div class="section-index">DASHCORE EN VIVO</div>
+
+    <div class="section-label">
+      03 / INSTALADO
+    </div>
+
+    <div class="section-index">
+      DASHCORE EN VIVO
+    </div>
+
   </div>
 
   <div class="section-title" data-reveal>
 
-    <h2>Hecho para vivir dentro de tu vehículo.</h2>
+    <h2>
+      Hecho para vivir dentro de tu vehículo.
+    </h2>
 
     <p>
       DashCore no es solo una app: es la pantalla que va a acompañarte
@@ -550,38 +982,63 @@
   <div class="interior-gallery" data-reveal="stagger">
 
     <figure class="interior-item interior-item--wide">
-      <img src="./src/assets/interior-01.png" alt="DashCore instalado en la pantalla central de un vehículo" loading="lazy">
+
+      <img
+        src="./src/assets/interior-01.png"
+        alt="DashCore instalado en la pantalla central de un vehículo"
+        loading="lazy">
+
       <figcaption>
         <b>Pantalla central</b>
         <span>En tablet Android de a bordo</span>
       </figcaption>
+
     </figure>
 
     <figure class="interior-item">
-      <img src="./src/assets/interior-02.png" alt="Vista de DashCore desde el asiento del conductor" loading="lazy">
+
+      <img
+        src="./src/assets/interior-02.png"
+        alt="Vista de DashCore desde el asiento del conductor"
+        loading="lazy">
+
       <figcaption>
         <b>Vista del conductor</b>
         <span>Legible al primer vistazo</span>
       </figcaption>
+
     </figure>
 
     <figure class="interior-item">
-      <img src="./src/assets/interior-03.png" alt="DashCore funcionando de noche dentro del vehículo" loading="lazy">
+
+      <img
+        src="./src/assets/interior-03.png"
+        alt="DashCore funcionando de noche dentro del vehículo"
+        loading="lazy">
+
       <figcaption>
         <b>Carretera</b>
         <span>Bajo consumo de brillo, cero distracción</span>
       </figcaption>
+
     </figure>
 
     <figure class="interior-item">
-      <img src="./src/assets/interior-04.png" alt="Detalle del adaptador OBD2 conectado bajo el volante" loading="lazy">
+
+      <img
+        src="./src/assets/interior-04.png"
+        alt="Detalle del adaptador OBD2 conectado bajo el volante"
+        loading="lazy">
+
       <figcaption>
         <b>Conexión OBD2</b>
         <span>Instalación discreta bajo el tablero</span>
       </figcaption>
+
     </figure>
 
   </div>
+
 </section>
 
 <!-- ============================== CONEXIÓN ============================== -->
@@ -589,15 +1046,25 @@
 <section class="simple-section" id="conexion">
 
   <div class="section-head" data-reveal>
-    <div class="section-label">04 / CONEXIÓN</div>
-    <div class="section-index">OBD2 + ANDROID</div>
+
+    <div class="section-label">
+      04 / CONEXIÓN
+    </div>
+
+    <div class="section-index">
+      OBD2 + ANDROID
+    </div>
+
   </div>
 
   <div class="two-col">
 
     <div class="section-title" data-reveal>
 
-      <h2>Conecta.<br><strong>Y conduce.</strong></h2>
+      <h2>
+        Conecta.<br>
+        <strong>Y conduce.</strong>
+      </h2>
 
       <p>
         Conecta tu adaptador OBD2,
@@ -612,22 +1079,29 @@
 
       <div>
         <b>01</b>
-        <span><strong>Conecta</strong> el adaptador OBD2.</span>
+        <span>
+          <strong>Conecta</strong> el adaptador OBD2.
+        </span>
       </div>
 
       <div>
         <b>02</b>
-        <span><strong>Empareja</strong> tu Android con DashCore.</span>
+        <span>
+          <strong>Empareja</strong> tu Android con DashCore.
+        </span>
       </div>
 
       <div>
         <b>03</b>
-        <span><strong>Conduce</strong> mientras ves tus datos.</span>
+        <span>
+          <strong>Conduce</strong> mientras ves tus datos.
+        </span>
       </div>
 
     </div>
 
   </div>
+
 </section>
 
 <!-- ============================== DESCARGAR ============================== -->
@@ -636,19 +1110,30 @@
 
   <div class="download-content" data-reveal>
 
-    <span class="section-label">05 / DESCARGAR</span>
+    <span class="section-label">
+      05 / DESCARGAR
+    </span>
 
-    <h2>Lleva DashCore<br><strong>a tu vehículo.</strong></h2>
+    <h2>
+      Lleva DashCore<br>
+      <strong>a tu vehículo.</strong>
+    </h2>
 
-    <p>Descarga DashCore para Android. Elige la versión compatible con la arquitectura de tu dispositivo.</p>
+    <p>
+      Descarga DashCore para Android.
+      Elige la versión compatible con la arquitectura
+      de tu dispositivo.
+    </p>
 
     <div class="download-buttons">
 
-      <!-- ARM32 — 32 bits -->
+      <!-- ================= ARM32 ================= -->
 
-      <a class="download-card radio"
-         href="https://github.com/FRITO-SALAMI/DashCore/releases/download/v0.1.0/DashCore32bitsByEdwinHD.apk"
-         download="DashCore32bitsByEdwinHD.apk">
+      <a
+        class="download-card radio"
+        href="https://github.com/FRITO-SALAMI/DashCore/releases/download/v0.1.0/Dashcore32ByEdwin.apk"
+        download="Dashcore32ByEdwin.apk"
+        aria-label="Descargar DashCore para dispositivos Android de 32 bits">
 
         <div class="radio-glow"></div>
 
@@ -657,20 +1142,34 @@
         </div>
 
         <div class="download-card-text">
-          <small>ARM32 — 32 bits</small>
-          <strong>⚡ DashCore para Radios/Tablets</strong>
-          <span>Versión actual · 32 bits</span>
+
+          <small>
+            ARM32 · 32 BITS
+          </small>
+
+          <strong>
+            Descargar para 32 bits
+          </strong>
+
+          <span>
+            Recomendado para radios y tablets Android compatibles
+          </span>
+
         </div>
 
-        <div class="download-arrow">↓</div>
+        <div class="download-arrow">
+          ↓
+        </div>
 
       </a>
 
-      <!-- ARM64 — 64 bits -->
+      <!-- ================= ARM64 ================= -->
 
-      <a class="download-card radio"
-         href="https://github.com/FRITO-SALAMI/DashCore/releases/download/v0.1.0/DashCore64bitsByEdwinHD.apk"
-         download="DashCore64bitsByEdwinHD.apk">
+      <a
+        class="download-card radio"
+        href="https://github.com/FRITO-SALAMI/DashCore/releases/download/v0.1.0/Dashcore64ByEdwin.apk"
+        download="Dashcore64ByEdwin.apk"
+        aria-label="Descargar DashCore para dispositivos Android de 64 bits">
 
         <div class="radio-glow"></div>
 
@@ -679,19 +1178,40 @@
         </div>
 
         <div class="download-card-text">
-          <small>ARM64 — 64 bits</small>
-          <strong>⚡ DashCore para Android 64-bit</strong>
-          <span>Versión actual · 64 bits</span>
+
+          <small>
+            ARM64 · 64 BITS
+          </small>
+
+          <strong>
+            Descargar para 64 bits
+          </strong>
+
+          <span>
+            Recomendado para smartphones, tablets y radios Android modernas
+          </span>
+
         </div>
 
-        <div class="download-arrow">↓</div>
+        <div class="download-arrow">
+          ↓
+        </div>
 
       </a>
 
     </div>
+
+    <p class="download-note">
+      <strong>¿No sabes cuál elegir?</strong>
+      La mayoría de los dispositivos Android modernos utilizan
+      <strong>ARM64 · 64 bits</strong>. Los dispositivos Android
+      más antiguos pueden utilizar <strong>ARM32 · 32 bits</strong>.
+    </p>
+
   </div>
+
 </section>
-```
+
 
   </main>
 
@@ -699,7 +1219,7 @@
 
   <footer class="site-footer">
 
-```
+
 <div class="footer-glow"></div>
 
 <div class="footer-main">
@@ -707,21 +1227,35 @@
   <div class="footer-brand-block">
 
     <a class="footer-brand" href="/" data-route data-target="#inicio">
-      <img src="./src/assets/logo.png" alt="DashCore" class="footer-logo">
-      <span>Dash<span>Core</span></span>
+
+      <img
+        src="./src/assets/logo.png"
+        alt="DashCore"
+        class="footer-logo">
+
+      <span>
+        Dash<span>Core</span>
+      </span>
+
     </a>
 
-    <p>Tu vehículo.<br><strong>Tu tablero.</strong></p>
+    <p>
+      Tu vehículo.<br>
+      <strong>Tu tablero.</strong>
+    </p>
 
     <div class="footer-status">
-      <span class="status-dot"></span>SISTEMA ONLINE
+      <span class="status-dot"></span>
+      SISTEMA ONLINE
     </div>
 
   </div>
 
   <div class="footer-column">
 
-    <span class="footer-heading">DASHCORE</span>
+    <span class="footer-heading">
+      DASHCORE
+    </span>
 
     <a href="/" data-route data-target="#inicio">Inicio</a>
     <a href="/dashboard" data-route data-target="#laboratorio">Dashboard</a>
@@ -735,7 +1269,9 @@
 
   <div class="footer-column">
 
-    <span class="footer-heading">PLATAFORMA</span>
+    <span class="footer-heading">
+      PLATAFORMA
+    </span>
 
     <span>Android</span>
     <span>OBD2</span>
@@ -746,15 +1282,24 @@
 
   <div class="footer-download">
 
-    <span class="footer-heading">EMPIEZA AHORA</span>
+    <span class="footer-heading">
+      EMPIEZA AHORA
+    </span>
 
     <p>
       Convierte tu Android en<br>
       el tablero de tu vehículo.
     </p>
 
-    <a href="/descargar" data-route data-target="#descargar" class="footer-button">
-      DESCARGAR DASHCORE <span>↗</span>
+    <a
+      href="/descargar"
+      data-route
+      data-target="#descargar"
+      class="footer-button">
+
+      DESCARGAR DASHCORE
+      <span>↗</span>
+
     </a>
 
   </div>
@@ -763,21 +1308,35 @@
 
 <div class="footer-bottom">
 
-  <span>© 2026 DashCore. Todos los derechos reservados.</span>
-  <a href="/politicas.html">Políticas</a>
-  <span>Diseñado para conducir.</span>
-  <span>By <strong>FRITO-SALAMI</strong></span>
+  <span>
+    © 2026 DashCore. Todos los derechos reservados.
+  </span>
+
+  <a href="/politicas.html">
+    Políticas
+  </a>
+
+  <span>
+    Diseñado para conducir.
+  </span>
+
+  <span>
+    By <strong>FRITO-SALAMI</strong>
+  </span>
 
 </div>
-```
 
   </footer>
 
   <!-- Admin oculto -->
 
-<a href="/admin/admin.html" class="hidden-admin-access" aria-label="Administración"></a>
+<a
+ href="/admin/admin.html"
+ class="hidden-admin-access"
+ aria-label="Administración"> </a>
 
   <style>
+
     .hidden-admin-access {
       position: fixed;
       right: 4px;
@@ -796,18 +1355,47 @@
       opacity: .65;
       transform: scale(1.4);
     }
+
   </style>
 
   <script src="./src/js/site.js" defer></script>
 
+  <!-- Feedback visual para las descargas -->
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+
+      const downloadCards = document.querySelectorAll(".download-card");
+
+      downloadCards.forEach(card => {
+
+        card.addEventListener("click", () => {
+
+          card.classList.add("downloading");
+
+          window.setTimeout(() => {
+            card.classList.remove("downloading");
+          }, 1800);
+
+        });
+
+      });
+
+    });
+  </script>
+
   <!-- DashCore — cursor tacómetro RPM -->
 
   <div id="dcSportCursor" aria-hidden="true">
-    <div class="dc-wheel">
-      <div class="dc-redline"></div>
-      <div class="dc-needle"></div>
-      <div class="dc-center"></div>
-    </div>
+
+```
+<div class="dc-wheel">
+  <div class="dc-redline"></div>
+  <div class="dc-needle"></div>
+  <div class="dc-center"></div>
+</div>
+```
+
   </div>
 
 </body>
